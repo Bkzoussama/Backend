@@ -1107,7 +1107,7 @@ class send_email(APIView):
 
                 </tr>
 
-                """.format(article.edition.journal.nomJournal, acc, article.date_creation, article.annonceur.Nom, article.marque.Nom if article.marque else '', article.produit.Nom if article.produit else '', "http://localhost:3001/article/link/"+str(article.id))
+                """.format(article.edition.journal.nomJournal, acc, article.date_creation, article.annonceur.Nom, article.marque.Nom if article.marque else '', article.produit.Nom if article.produit else '', "http://client.promediaconseils.com/article/link/"+str(article.id))
 
             emailm = emailm + """</tbody>
                                     </table>
