@@ -999,7 +999,6 @@ class PubLinkClient(generics.ListAPIView):
                                 qs = qs | annonceur.pub_set.all()
             return qs.filter(id=id)
 
-
 class send_email(APIView):
     #permission_classes = [IsAdminUser]
 
@@ -1028,10 +1027,12 @@ class send_email(APIView):
                             else:
                                 qs = qs | annonceur.article_set.filter(
                                     date_creation=date.today())
-        print(qs)
-        print("##########################################")
 
-        emailm = """
+            print(qs)
+            print(client.email)
+            print("##########################################")
+
+            emailm = """
         <!DOCTYPE html>
 <html>
 	<table style="border-collapse: collapse;
@@ -1062,62 +1063,62 @@ class send_email(APIView):
         
         
         """
-        for article in qs:
-            acc = ""
-            if len(article.accroche) > 70:
-                acc = article.accroche[:70]+" ..."
-            else:
-                acc = article.accroche
-            emailm = emailm+"""
-            <tr style="border-bottom: 1px solid #dddddd;color="black">
-				<td style="padding: 12px 15px;">{}</td>
-				<td>
-					<div style="
-					overflow: hidden;
-					text-overflow: ellipsis;
-					display: -webkit-box;
-					-webkit-line-clamp: 1; /* number of lines to show */
-							line-clamp: 1; 
-					-webkit-box-orient: vertical;" >
-                        {}
-                    </div>
-				</td>
-				<td style="padding: 12px 15px;">{}</td>
-				<td style="padding: 12px 15px;">{}</td>
-				<td style="padding: 12px 15px;">{}</td>
-				<td style="padding: 12px 15px;">{}</td>
-				<td style="padding: 12px 15px;">
-					<button style="
-                    border: none;
-                    padding: 0 10px;
-					height: 35px;
-					line-height: 25px;
-					border-radius: 7px;
-					background-color: #0070f3;
-					color: white;
-					
-						">
-						<a style="color: white;
-						text-decoration: none;" href="{} ">
-							lien
-						</a>
-					</button>
-				</td>
+            for article in qs:
+                acc = ""
+                if len(article.accroche) > 70:
+                    acc = article.accroche[:70]+" ..."
+                else:
+                    acc = article.accroche
+                emailm = emailm+"""
+                <tr style="border-bottom: 1px solid #dddddd;color="black">
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td>
+                        <div style="
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 1; /* number of lines to show */
+                                line-clamp: 1; 
+                        -webkit-box-orient: vertical;" >
+                            {}
+                        </div>
+                    </td>
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td style="padding: 12px 15px;">
+                        <button style="
+                        border: none;
+                        padding: 0 10px;
+                        height: 35px;
+                        line-height: 25px;
+                        border-radius: 7px;
+                        background-color: #0070f3;
+                        color: white;
+                        
+                            ">
+                            <a style="color: white;
+                            text-decoration: none;" href="{} ">
+                                lien
+                            </a>
+                        </button>
+                    </td>
 
-			</tr>
+                </tr>
 
-            """.format(article.edition.journal.nomJournal, acc, article.date_creation, article.annonceur.Nom, article.marque.Nom if article.marque else '', article.produit.Nom if article.produit else '', "http://localhost:3001/article/link/"+str(article.id))
+                """.format(article.edition.journal.nomJournal, acc, article.date_creation, article.annonceur.Nom, article.marque.Nom if article.marque else '', article.produit.Nom if article.produit else '', "http://localhost:3001/article/link/"+str(article.id))
 
-        emailm = emailm + """</tbody>
-                                </table>
-                            </html>"""
+            emailm = emailm + """</tbody>
+                                    </table>
+                                </html>"""
 
-        email = EmailMessage('A new mail!', emailm, to=[
-            'ghecharaf@gmail.com', 'fayssalbenaissa1513@gmail.com'])
-        email.content_subtype = "html"
-        email.send()
+            if len(qs) != 0:
+                email = EmailMessage(
+                    'A new mail from ProMediaConseils!', emailm, to=[client.email])
+                email.content_subtype = "html"
+                email.send()
         return Response("ok")
-
 # 'fayssalbenaissa1513@gmail.com'
 
 
