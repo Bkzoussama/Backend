@@ -1133,6 +1133,12 @@ class PubliciteDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PubliciteSerializer
     lookup_fields = ['pk']
 
+class PubliciteClientDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Publicite.objects.all()
+    serializer_class = PubliciteSerializer
+    lookup_fields = ['pk']
+
 
 class ProgrammeView(generics.ListCreateAPIView):
     serializer_class = ProgrammeSerializer
