@@ -30,12 +30,6 @@ class Article(models.Model):
         ("AR", "arabe"),
         ("FR", "francais"),
     )
-
-    pages = (
-        ("s", "sport"),
-        ("p", "politeque"),
-        ("c", "culture"),
-    )
     annonceur = models.ForeignKey(
         'Annonceur', on_delete=models.CASCADE)
     marque = models.ForeignKey(
@@ -47,8 +41,8 @@ class Article(models.Model):
     language = models.CharField(max_length=2, default="", choices=languages)
     edition = models.ForeignKey(Edition, on_delete=models.CASCADE)
     accroche = models.CharField(max_length=10000, default="")
-    page_suivante = models.CharField(max_length=1, default="", choices=pages)
-    page_precedente = models.CharField(max_length=1, default="", choices=pages)
+    page_suivante = models.CharField(max_length=50, default="")
+    page_precedente = models.CharField(max_length=50, default="")
     confirmed = models.BooleanField(default=False)
 
 
@@ -89,7 +83,7 @@ class Afficheur(models.Model):
 # --------------------------- definition de la table Panneau --------------------------------------------
 class Panneau(models.Model):
     choix_type = [
-        ('Simple', 'Simple'),
+        ('Panneau', 'Panneau'),
         ('Unipol', 'Unipol'),
         ('Sucette', 'Sucette'),
         ('Abri-Bus', 'Abri-Bus'),
@@ -109,9 +103,8 @@ class Panneau(models.Model):
     type = models.CharField(max_length=20, choices=choix_type)
     apc = models.ForeignKey(Apc, on_delete=models.CASCADE)
     itineraire = models.CharField(max_length=20)
-    latitude = models.FloatField(null=True)
-    longitude = models.FloatField()
-    designation = models.CharField(max_length=40)
+    latitude = models.FloatField(null=True,blank=True)
+    longitude = models.FloatField(null=True,blank=True)
     hauteur = models.FloatField()
     largeur = models.FloatField()
     elevation = models.FloatField()
@@ -146,9 +139,11 @@ class Pub(models.Model):
         'Produit', on_delete=models.CASCADE, null=True, blank=True)
     confirmed = models.BooleanField(default=False)
     circulation = models.BooleanField(default=True)
+    code = models.CharField(max_length=50,  null=True, blank=True)
+    accroche = models.CharField(max_length=10000, default="")
 
     def __str__(self):
-        return str(self.date_creation)+"  ===>  "+str(self.id)
+        return str(self.date_creation)+"  ===>  "+str(self.id)\
 
 
 class Annonceur(models.Model):
@@ -163,7 +158,7 @@ class Annonceur(models.Model):
 class Marque(models.Model):
     NomAnnonceur = models.ForeignKey(Annonceur, on_delete=models.CASCADE)
     Nom = models.CharField(max_length=100, unique=True)
-    Logo = models.ImageField(upload_to="media", default="")
+    
 
     def __str__(self):
         return str(self.id)
@@ -172,7 +167,6 @@ class Marque(models.Model):
 class Produit(models.Model):
     NomMarque = models.ForeignKey(Marque, on_delete=models.CASCADE)
     Nom = models.CharField(max_length=100, unique=True)
-    Logo = models.ImageField(upload_to="media", default="")
 
     def __str__(self):
         return str(self.id)

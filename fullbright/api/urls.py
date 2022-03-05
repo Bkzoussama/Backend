@@ -36,7 +36,9 @@ urlpatterns = [
     path('panneau/<int:pk>/', PanneauDetail.as_view()),
     path('panneau/filter/', PanneauFilter.as_view()),
 
-    path('pub/', PubView.as_view()),
+    path('pubFalse/', PubViewFalse.as_view()),
+    path('pubTrue/', PubViewTrue.as_view()),
+    path('pubAjout/',PubViewTest.as_view()),
     path('pub/count/', PubCount.as_view()),
     path('pub/<int:pk>/', PubDetail.as_view()),
     path('pub/filter/', PubFilter.as_view()),

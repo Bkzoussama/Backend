@@ -57,10 +57,44 @@ class ArticleClientSerializer(serializers.ModelSerializer):
 
 
 class ArticleSerializer(serializers.ModelSerializer):
+    nom_annonceur = serializers.SerializerMethodField()
+    nom_marque = serializers.SerializerMethodField()
+    nom_produit = serializers.SerializerMethodField()
+
+    numEdition = serializers.SerializerMethodField()
+    dateEdition = serializers.SerializerMethodField()
+    nomJournal = serializers.SerializerMethodField()
+
+    def get_numEdition(self, obj):
+        return obj.edition.numero
+
+    def get_dateEdition(self, obj):
+        return obj.edition.date
+
+    def get_nomJournal(self, obj):
+        return obj.edition.journal.nomJournal
+
+    def get_nom_annonceur(self, obj):
+        return obj.annonceur.Nom
+
+    def get_nom_marque(self, obj):
+        if obj.marque:
+            return obj.marque.Nom
+        else:
+            return "indefinie"
+
+    def get_nom_produit(self, obj):
+        if obj.produit:
+            return obj.produit.Nom
+        else:
+            return "indefinie"
+
     class Meta:
         model = Article
         fields = ['id', 'date_creation', "language", "edition", "accroche",
-                  "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "confirmed", "image"]
+                  "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
+                  "numEdition", "dateEdition", "nomJournal", "nom_annonceur",
+                  "nom_marque", "nom_produit"]
 
 
 # ---------------------------------------------------------------------------------------------
@@ -106,7 +140,7 @@ class PanneauSerializer(serializers.ModelSerializer):
     class Meta:
         model = Panneau
         fields = ['id', 'afficheur', 'adresse', 'code', 'type', 'apc', 'itineraire',
-                  'latitude', 'longitude', 'designation', 'hauteur', 'largeur',
+                  'latitude', 'longitude', 'hauteur', 'largeur',
                   'elevation', 'mecanisme',  'image', 'nomApc', 'nomWilaya', 'nomCommune', 'nbpub']
 
 # ----------------------------------------------------------------------------------------------
@@ -139,8 +173,7 @@ class PubSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pub
         fields = ['id', "panneau", 'code_panneau', 'langue', 'annonceur', 'marque', 'produit',  "confirmed",
-                  'nom_produit', 'nom_annonceur', 'nom_marque', 'date_creation', 'image', 'video', 'circulation']
-
+                  'nom_produit', 'nom_annonceur', 'nom_marque', 'date_creation', 'image', 'video', 'circulation', 'code','accroche']
 
 class PubClientSerializer(serializers.ModelSerializer):
     nom_annonceur = serializers.SerializerMethodField()
@@ -203,13 +236,13 @@ class MarqueSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Marque
-        fields = ('id', "NomAnnonceur", 'Nom', "Logo", "nbProduit")
+        fields = ('id', "NomAnnonceur", 'Nom', "nbProduit")
 
 
 class ProduitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Produit
-        fields = ('id', "NomMarque", 'Nom', "Logo")
+        fields = ('id', "NomMarque", 'Nom')
 
 
 class WilayaSerializer(serializers.ModelSerializer):

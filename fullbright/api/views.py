@@ -1,8 +1,9 @@
 
-
 from email import message
 import json
+from pickle import FALSE
 from django.db.models.expressions import Case, When
+from numpy import False_
 from rest_framework import pagination
 from django.core.mail import send_mail
 from django.core.mail import EmailMessage
@@ -302,14 +303,20 @@ class PanneauFilter(generics.ListAPIView):
 # PubView : pour get,update,delete pour les instances
 
 
-class PubView(generics.ListCreateAPIView):
+class PubViewFalse(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & AfficheurPermissions]
-    serializer_class = PubSerializer
-    pagination_class = MyPagination
-
+    serializer_class=PubSerializer
     def get_queryset(self):
         nom = self.request.query_params.get('panneau')
-        queryset = Pub.objects.filter(panneau=nom, confirmed=True)
+        queryset =Pub.objects.filter(panneau=nom, confirmed=True,circulation=False)
+        return queryset
+
+class PubViewTrue(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AfficheurPermissions]
+    serializer_class=PubSerializer
+    def get_queryset(self):
+        nom = self.request.query_params.get('panneau')
+        queryset =Pub.objects.filter(panneau=nom, confirmed=True,circulation=True)
         return queryset
 
 
@@ -318,8 +325,11 @@ class PubCount(APIView):
 
     def get(self, request, format=None):
         nom = self.request.query_params.get('panneau')
-        count = Pub.objects.filter(panneau=nom).count()
+        countF = Pub.objects.filter(panneau=nom,circulation=False).count()
+        countT = Pub.objects.filter(panneau=nom,circulation=True).count()
+        count={"countF":countF,"countT":countT}
         return Response(count)
+    
 
 
 class PubDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -1000,7 +1010,7 @@ class PubLinkClient(generics.ListAPIView):
             return qs.filter(id=id)
 
 class send_email(APIView):
-    #permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, format=None):
 
@@ -1184,17 +1194,19 @@ class ProgrammeEtPub(APIView):
         i = 0
         for prog in programme:
             response.append({
+                "annonceur":"-",
                 "id": i,
                 "message": prog.message,
                 "debut": prog.debut,
                 "duree": prog.duree,
                 "type": 1,
                 "lien": prog.id,
-                "ecran": ""
+                "ecran": "-"
             })
             i += 1
         for pub in publicite:
             response.append({
+                "annonceur":pub.nom_annonceur,
                 "id": i,
                 "message": pub.message,
                 "debut": pub.debut,
@@ -1271,3 +1283,32 @@ class ChaneiClientView(generics.ListAPIView):
                 i += 1
 
             return Response(sorted(response, key=lambda d: d['debut']))
+
+
+
+class PubViewTest(APIView):
+    # permission_classes = [IsAuthenticated & AfficheurPermissions]
+    serializer_class = PubSerializer
+    def post(self, request, format=None):
+        data = request.data
+        code = ""
+        if data['code'] == '':
+            count = Pub.objects.filter(
+                date_creation=date.today()).values_list('code', flat=True).distinct().count()
+            code = date.today().strftime("%d%m%Y") + "-" + "AF" + "-" + \
+                "{0:0=3d}".format(count+1) + "-" + data['langue']
+            data['code'] = code
+            data['confirmed'] = False
+            serializer = PubSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            data['confirmed'] = False
+            serializer = PubSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
