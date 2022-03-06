@@ -102,6 +102,13 @@ class JournalView(generics.ListCreateAPIView):
     serializer_class = JournalSerializer
 
 
+class JournalClientView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = MyPagination
+    queryset = Journal.objects.all()
+    serializer_class = JournalSerializer
+
+
 class UpdateJournalView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated & JournalPermissions]
     queryset = Journal.objects.all()
@@ -136,6 +143,22 @@ class EditionView(generics.ListCreateAPIView):
 
 class EditionSearch(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & JournalPermissions]
+    serializer_class = EditionSerializer
+    pagination_class = MyPagination
+
+    def get_queryset(self):
+        journal = self.request.query_params.get('journal')
+        qset = Edition.objects.filter(journal=journal).order_by('-date')
+        start = self.request.query_params.get('start')
+        end = self.request.query_params.get('end')
+        querySet = [edition for edition in qset
+                    if edition.date >= datetime.strptime(start, '%Y-%m-%d').date()
+                    and edition.date <= datetime.strptime(end, '%Y-%m-%d').date()]
+        return querySet
+
+
+class EditionSearchClient(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = EditionSerializer
     pagination_class = MyPagination
 
@@ -305,18 +328,23 @@ class PanneauFilter(generics.ListAPIView):
 
 class PubViewFalse(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & AfficheurPermissions]
-    serializer_class=PubSerializer
+    serializer_class = PubSerializer
+
     def get_queryset(self):
         nom = self.request.query_params.get('panneau')
-        queryset =Pub.objects.filter(panneau=nom, confirmed=True,circulation=False)
+        queryset = Pub.objects.filter(
+            panneau=nom, confirmed=True, circulation=False)
         return queryset
+
 
 class PubViewTrue(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & AfficheurPermissions]
-    serializer_class=PubSerializer
+    serializer_class = PubSerializer
+
     def get_queryset(self):
         nom = self.request.query_params.get('panneau')
-        queryset =Pub.objects.filter(panneau=nom, confirmed=True,circulation=True)
+        queryset = Pub.objects.filter(
+            panneau=nom, confirmed=True, circulation=True)
         return queryset
 
 
@@ -325,11 +353,10 @@ class PubCount(APIView):
 
     def get(self, request, format=None):
         nom = self.request.query_params.get('panneau')
-        countF = Pub.objects.filter(panneau=nom,circulation=False).count()
-        countT = Pub.objects.filter(panneau=nom,circulation=True).count()
-        count={"countF":countF,"countT":countT}
+        countF = Pub.objects.filter(panneau=nom, circulation=False).count()
+        countT = Pub.objects.filter(panneau=nom, circulation=True).count()
+        count = {"countF": countF, "countT": countT}
         return Response(count)
-    
 
 
 class PubDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -362,50 +389,30 @@ class PubConfirmedCount(APIView):
 class PubFilter(generics.ListAPIView):
     permission_classes = [IsAuthenticated & AfficheurPermissions]
     serializer_class = PubSerializer
-    pagination_class = MyPagination
 
     def get_queryset(self):
-        langue = self.request.query_params.get('langue')
-        annonceur = self.request.query_params.get('annonceur')
-        marque = self.request.query_params.get('marque')
-        produit = self.request.query_params.get('produit')
-        panneau = self.request.query_params.get('panneau')
-        start = self.request.query_params.get('start')
-        end = self.request.query_params.get('end')
+        code = self.request.query_params.get('code')
+        type = self.request.query_params.get('type')
 
-        if(annonceur and not marque and not produit):
-            queryset = Pub.objects.filter(
-                annonceur=annonceur,
-                langue__icontains=langue,
-                panneau=panneau,
-                confirmed=True
-            )
+        queryset = []
 
-        elif(annonceur and marque and not produit):
-            queryset = Pub.objects.filter(
-                annonceur=annonceur,
-                marque=marque,
-                langue__icontains=langue,
-                panneau=panneau, confirmed=True
-            )
-        elif(annonceur and marque and produit):
-            queryset = Pub.objects.filter(
-                annonceur=annonceur,
-                marque=marque,
-                produit=produit,
-                langue__icontains=langue,
-                panneau=panneau, confirmed=True
-            )
-        elif(not annonceur and not marque and not produit):
-            queryset = Pub.objects.filter(
-                langue__icontains=langue,
-                panneau=panneau, confirmed=True)
+        if type == 'Sucette dynamique':
+            queryset = Pub.objects.filter(code=code, panneau__type=type)
+        else:
+            queryset = Pub.objects.filter(code=code).exclude(
+                panneau__type='Sucette dynamique')
 
-        queryset = [pub for pub in queryset
-                    if pub.date_creation >= datetime.strptime(start, '%Y-%m-%d').date()
-                    and pub.date_creation <= datetime.strptime(end, '%Y-%m-%d').date()]
+        print(queryset)
 
         return queryset
+
+
+class PubCodes(APIView):
+    #permission_classes = [IsAuthenticated & AfficheurPermissions]
+
+    def get(self, request, format=None):
+        codes = Pub.objects.values_list('code', flat=True).distinct()
+        return Response(codes)
 
 # --------------------------------------------------------------------------------------
 
@@ -769,9 +776,6 @@ class getProduitMarqueAnnonceur(APIView):
         return Response(data)
 
 
-
-
-
 class ArticleClientView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ArticleClientSerializer
@@ -783,9 +787,11 @@ class ArticleClientView(generics.ListAPIView):
         annonceur1 = self.request.query_params.get('annonceur')
         marque1 = self.request.query_params.get('marque')
         produit1 = self.request.query_params.get('produit')
-        journal = self.request.query_params.get('journal')
+        edition = self.request.query_params.get('edition')
         start = self.request.query_params.get('start')
         end = self.request.query_params.get('end')
+
+        print(edition)
 
         if self.request.user.is_client == True:
             qs = Article.objects.none()
@@ -828,7 +834,8 @@ class ArticleClientView(generics.ListAPIView):
                         articles = articles | queryset.filter(date_creation__range=(datetime.strptime(
                             start, '%Y-%m-%d'), datetime.strptime(end, '%Y-%m-%d'))).filter(
                             date_creation__range=(contract.date_debut, contract.date_fin))
-
+            articles = articles.filter(edition=edition)
+            print(articles)
             return articles
 
 
@@ -905,8 +912,6 @@ class ContractViewClient(generics.ListCreateAPIView):
     def get_queryset(self):
         return Contract.objects.filter(
             abonnement=self.request.query_params.get('abonnoment'))
-
-
 
 
 class VideoConfirmedCount(APIView):
@@ -1008,6 +1013,7 @@ class PubLinkClient(generics.ListAPIView):
                             else:
                                 qs = qs | annonceur.pub_set.all()
             return qs.filter(id=id)
+
 
 class send_email(APIView):
     permission_classes = [IsAdminUser]
@@ -1144,6 +1150,7 @@ class PubliciteDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PubliciteSerializer
     lookup_fields = ['pk']
 
+
 class PubliciteClientDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Publicite.objects.all()
@@ -1156,10 +1163,12 @@ class ProgrammeView(generics.ListCreateAPIView):
     queryset = Programme.objects.all()
     permission_classes = [IsAuthenticated & ChainePermissions]
 
+
 class UpdateProgrammeView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Programme.objects.all()
     serializer_class = ProgrammeSerializer
     permission_classes = [IsAuthenticated & ChainePermissions]
+
 
 class JourDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
@@ -1171,13 +1180,16 @@ class JourDetail(generics.RetrieveUpdateDestroyAPIView):
 class JourView(generics.ListCreateAPIView):
     serializer_class = JourSerializer
     permission_classes = [IsAuthenticated & ChainePermissions]
+
     def get_queryset(self):
         id = self.request.query_params.get('id')
         queryset = Jour.objects.filter(chaine=id)
         return queryset
 
+
 class JourViewClient(generics.ListAPIView):
     serializer_class = JourSerializer
+
     def get_queryset(self):
         id = self.request.query_params.get('id')
         queryset = Jour.objects.filter(chaine=id)
@@ -1186,6 +1198,7 @@ class JourViewClient(generics.ListAPIView):
 
 class ProgrammeEtPub(APIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
+
     def get(self, request):
         id = self.request.query_params.get('id')
         publicite = Publicite.objects.filter(jour=id, confirmed=True)
@@ -1194,7 +1207,7 @@ class ProgrammeEtPub(APIView):
         i = 0
         for prog in programme:
             response.append({
-                "annonceur":"-",
+                "annonceur": "-",
                 "id": i,
                 "message": prog.message,
                 "debut": prog.debut,
@@ -1206,7 +1219,7 @@ class ProgrammeEtPub(APIView):
             i += 1
         for pub in publicite:
             response.append({
-                "annonceur":pub.nom_annonceur,
+                "annonceur": pub.annonceur.Nom,
                 "id": i,
                 "message": pub.message,
                 "debut": pub.debut,
@@ -1222,6 +1235,7 @@ class ProgrammeEtPub(APIView):
 
 class ChaneiClientView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         jour = self.request.query_params.get('id')
 
@@ -1261,6 +1275,7 @@ class ChaneiClientView(generics.ListAPIView):
             i = 0
             for prog in programme:
                 response.append({
+                    "annonceur": '-',
                     "id": i,
                     "message": prog.message,
                     "debut": prog.debut,
@@ -1272,6 +1287,8 @@ class ChaneiClientView(generics.ListAPIView):
                 i += 1
             for pub in videos:
                 response.append({
+                    "annonceur": pub.annonceur.Nom,
+
                     "id": i,
                     "message": pub.message,
                     "debut": pub.debut,
@@ -1285,10 +1302,10 @@ class ChaneiClientView(generics.ListAPIView):
             return Response(sorted(response, key=lambda d: d['debut']))
 
 
-
 class PubViewTest(APIView):
     # permission_classes = [IsAuthenticated & AfficheurPermissions]
     serializer_class = PubSerializer
+
     def post(self, request, format=None):
         data = request.data
         code = ""
@@ -1305,10 +1322,24 @@ class PubViewTest(APIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
+            _mutable = data._mutable
+
+            # set to mutable
+            data._mutable = True
             data['confirmed'] = False
+            obj = Pub.objects.filter(code=data['code'])[0]
+            if obj.image:
+                data['image'] = obj.image
+            else:
+                data['video'] = obj.video
+
+            data['date_creation'] = obj.date_creation
+
+            data._mutable = _mutable
+            print("#"*30)
+            print(data)
             serializer = PubSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        

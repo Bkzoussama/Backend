@@ -93,7 +93,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = ['id', 'date_creation', "language", "edition", "accroche",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
-                  "numEdition", "dateEdition", "nomJournal", "nom_annonceur",
+                  "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'confirmed',
                   "nom_marque", "nom_produit"]
 
 
@@ -151,6 +151,7 @@ class PubSerializer(serializers.ModelSerializer):
     nom_marque = serializers.SerializerMethodField()
     nom_produit = serializers.SerializerMethodField()
     code_panneau = serializers.SerializerMethodField()
+    type_panneau = serializers.SerializerMethodField()
 
     def get_nom_annonceur(self, obj):
         return obj.annonceur.Nom
@@ -170,10 +171,14 @@ class PubSerializer(serializers.ModelSerializer):
     def get_code_panneau(self, obj):
         return obj.panneau.code
 
+    def get_type_panneau(self, obj):
+        return obj.panneau.type
+
     class Meta:
         model = Pub
         fields = ['id', "panneau", 'code_panneau', 'langue', 'annonceur', 'marque', 'produit',  "confirmed",
-                  'nom_produit', 'nom_annonceur', 'nom_marque', 'date_creation', 'image', 'video', 'circulation', 'code','accroche']
+                  'nom_produit', 'nom_annonceur', 'nom_marque', 'date_creation', 'image', 'video', 'circulation', 'code', 'accroche', 'type_panneau']
+
 
 class PubClientSerializer(serializers.ModelSerializer):
     nom_annonceur = serializers.SerializerMethodField()
