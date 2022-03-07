@@ -1,4 +1,5 @@
 
+from django.core.files.base import ContentFile
 from email import message
 import json
 from pickle import FALSE
@@ -118,7 +119,7 @@ class UpdateJournalView(generics.RetrieveUpdateDestroyAPIView):
 
 class Journalsearch(generics.ListAPIView):
     # queryset = Journal.objects.all()
-    permission_classes = [IsAuthenticated & JournalPermissions]
+    permission_classes = [IsAuthenticated]
     serializer_class = JournalSerializer
 
     def get_queryset(self):
@@ -299,7 +300,7 @@ class PanneauView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         nom = self.request.query_params.get('afficheur')
-        queryset = Panneau.objects.filter(afficheur=nom)
+        queryset = Panneau.objects.filter(afficheur=nom).order_by("code")
         return queryset
 
 
@@ -411,7 +412,8 @@ class PubCodes(APIView):
     #permission_classes = [IsAuthenticated & AfficheurPermissions]
 
     def get(self, request, format=None):
-        codes = Pub.objects.values_list('code', flat=True).distinct()
+        codes = Pub.objects.filter(confirmed=True).values_list(
+            'code', flat=True).distinct()
         return Response(codes)
 
 # --------------------------------------------------------------------------------------
@@ -846,6 +848,7 @@ class PubClientView(generics.ListAPIView):
 
     def get_queryset(self):
 
+        accroche = self.request.query_params.get('accroche')
         langue = self.request.query_params.get('langue')
         annonceur1 = self.request.query_params.get('annonceur')
         marque1 = self.request.query_params.get('marque')
@@ -869,6 +872,7 @@ class PubClientView(generics.ListAPIView):
                             else:
                                 qs = qs | annonceur.pub_set.all()
             queryset = qs.filter(
+                accroche__icontains=accroche,
                 langue__icontains=langue,
                 confirmed=True
             )
@@ -1183,7 +1187,7 @@ class JourView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         id = self.request.query_params.get('id')
-        queryset = Jour.objects.filter(chaine=id)
+        queryset = Jour.objects.filter(chaine=id).order_by('date')
         return queryset
 
 
@@ -1192,7 +1196,7 @@ class JourViewClient(generics.ListAPIView):
 
     def get_queryset(self):
         id = self.request.query_params.get('id')
-        queryset = Jour.objects.filter(chaine=id)
+        queryset = Jour.objects.filter(chaine=id).order_by('date')
         return queryset
 
 
@@ -1328,9 +1332,16 @@ class PubViewTest(APIView):
             data._mutable = True
             data['confirmed'] = False
             obj = Pub.objects.filter(code=data['code'])[0]
+
             if obj.image:
-                data['image'] = obj.image
+                picture_copy = ContentFile(obj.image.read())
+                picture_copy.name = obj.image.name + datetime.now().strftime("%d/%m/%Y-%H:%M:%S") + \
+                    '.'+obj.image.name.split('.')[-1]
+                print(picture_copy.name)
+                data['image'] = picture_copy
             else:
+                picture_copy = ContentFile(obj.video.read())
+                picture_copy.name = obj.video.name + datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                 data['video'] = obj.video
 
             data['date_creation'] = obj.date_creation
