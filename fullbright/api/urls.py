@@ -10,8 +10,12 @@ urlpatterns = [
     path('journaux/search/', Journalsearch.as_view()),
     path('journaux/test/', JournalViewTest.as_view()),
 
+    path('journaux/client/', JournalClientView.as_view()),
+
+
 
     path('editions/search', EditionSearch.as_view()),
+    path('editions/client/', EditionSearchClient.as_view()),
     path('editions/', EditionView.as_view()),
     path('editions/<int:pk>/', UpdateEditioneView.as_view()),
     path('editions/count/', Editioncount.as_view()),
@@ -38,8 +42,9 @@ urlpatterns = [
 
     path('pubFalse/', PubViewFalse.as_view()),
     path('pubTrue/', PubViewTrue.as_view()),
-    path('pubAjout/',PubViewTest.as_view()),
+    path('pubAjout/', PubViewTest.as_view()),
     path('pub/count/', PubCount.as_view()),
+    path('pub/codes/', PubCodes.as_view()),
     path('pub/<int:pk>/', PubDetail.as_view()),
     path('pub/filter/', PubFilter.as_view()),
     path('pub/confirmed/', PubConfirmation.as_view()),

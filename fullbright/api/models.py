@@ -29,6 +29,7 @@ class Article(models.Model):
     languages = (
         ("AR", "arabe"),
         ("FR", "francais"),
+        ("AF", "arabe + francais"),
     )
     annonceur = models.ForeignKey(
         'Annonceur', on_delete=models.CASCADE)
@@ -43,6 +44,9 @@ class Article(models.Model):
     accroche = models.CharField(max_length=10000, default="")
     page_suivante = models.CharField(max_length=50, default="")
     page_precedente = models.CharField(max_length=50, default="")
+    num_page = models.IntegerField(default=0, null=True, blank=True)
+    couleur = models.CharField(
+        max_length=50, default="", null=True, blank=True)
     confirmed = models.BooleanField(default=False)
 
 
@@ -103,8 +107,8 @@ class Panneau(models.Model):
     type = models.CharField(max_length=20, choices=choix_type)
     apc = models.ForeignKey(Apc, on_delete=models.CASCADE)
     itineraire = models.CharField(max_length=20)
-    latitude = models.FloatField(null=True,blank=True)
-    longitude = models.FloatField(null=True,blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     hauteur = models.FloatField()
     largeur = models.FloatField()
     elevation = models.FloatField()
@@ -122,7 +126,8 @@ class Pub(models.Model):
     choix_langue = [
         ('fr', 'fr'),
         ('ar', 'ar'),
-        ('fr + ar', 'fr + ar'),
+        ("AF", "arabe + francais"),
+
     ]
     panneau = models.ForeignKey(Panneau, on_delete=models.CASCADE)
     langue = models.CharField(max_length=20, choices=choix_langue)
@@ -146,6 +151,7 @@ class Pub(models.Model):
         return str(self.date_creation)+"  ===>  "+str(self.id)\
 
 
+
 class Annonceur(models.Model):
 
     Nom = models.CharField(max_length=100, unique=True)
@@ -158,7 +164,6 @@ class Annonceur(models.Model):
 class Marque(models.Model):
     NomAnnonceur = models.ForeignKey(Annonceur, on_delete=models.CASCADE)
     Nom = models.CharField(max_length=100, unique=True)
-    
 
     def __str__(self):
         return str(self.id)
@@ -181,7 +186,7 @@ class Abonnement(models.Model):
         ('P', 'Panneau'),
         ('C', 'Chaine'),
     ]
-    Nom = models.CharField(max_length=100, unique=True)
+    Nom = models.CharField(max_length=100)
     service = models.CharField(max_length=1, default="", choices=services)
     date_debut = models.DateField()
     date_fin = models.DateField()
@@ -205,6 +210,8 @@ class Publicite(models.Model):
     languages = (
         ("AR", "arabe"),
         ("FR", "francais"),
+        ("AF", "arabe + francais"),
+
     )
     jour = models.ForeignKey('Jour', on_delete=models.CASCADE)
     annonceur = models.ForeignKey(
@@ -217,17 +224,18 @@ class Publicite(models.Model):
         upload_to="media",  default="", null=True, blank=True)
     debut = models.TimeField()
     duree = models.DurationField()
+
     rang = models.IntegerField(null=True, blank=True)
     encombrement = models.IntegerField(null=True, blank=True)
     ecran = models.IntegerField()
     language = models.CharField(max_length=2, default="", choices=languages)
-    message = models.CharField(max_length=120, default="")
+    message = models.CharField(max_length=12000, default="")
     confirmed = models.BooleanField(default=False)
 
 
 class Programme(models.Model):
     jour = models.ForeignKey('Jour', on_delete=models.CASCADE)
-    message = models.CharField(max_length=120, default="")
+    message = models.CharField(max_length=1200, default="")
     debut = models.TimeField()
     duree = models.DurationField()
 
