@@ -403,8 +403,6 @@ class PubFilter(generics.ListAPIView):
             queryset = Pub.objects.filter(code=code).exclude(
                 panneau__type='Sucette dynamique')
 
-        print(queryset)
-
         return queryset
 
 

@@ -50,7 +50,7 @@ class ArticleClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'date_creation', "language", "edition", "accroche",
+        fields = ['id', 'date_creation', "language", "edition", "accroche", "couleur", "num_page",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur",
                   "nom_marque", "nom_produit"]
@@ -91,7 +91,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'date_creation', "language", "edition", "accroche",
+        fields = ['id', 'date_creation', "language", "edition", "accroche", "couleur", "num_page",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'confirmed',
                   "nom_marque", "nom_produit"]
