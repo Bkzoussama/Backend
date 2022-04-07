@@ -805,8 +805,13 @@ class ArticleClientView(generics.ListAPIView):
                                     if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
                                             qs = qs | produit.article_set.all()
+                                        qs = qs | marque.article_set.filter(
+                                            produit=None)
                                     else:
                                         qs = qs | marque.article_set.all()
+
+                                    qs = qs | annonceur.article_set.filter(
+                                        marque=None)
                             else:
                                 qs = qs | annonceur.article_set.all()
 
@@ -866,8 +871,12 @@ class PubClientView(generics.ListAPIView):
                                     if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
                                             qs = qs | produit.pub_set.all()
+                                        qs = qs | marque.pub_set.filter(
+                                            produit=None)
                                     else:
                                         qs = qs | marque.pub_set.all()
+                                    qs = qs | marque.pub_set.filter(
+                                        marque=None)
                             else:
                                 qs = qs | annonceur.pub_set.all()
             queryset = qs.filter(
@@ -1253,11 +1262,18 @@ class ChaneiClientView(generics.ListAPIView):
                         for annonceur in contract.annonceurs.all():
                             if contract.marques.filter(NomAnnonceur=annonceur).exists():
                                 for marque in contract.marques.filter(NomAnnonceur=annonceur):
-                                    if contract.produits.filter(NoMarque=marque).exists():
+                                    if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
+                                            print(produit.publicite_set.all())
                                             qs = qs | produit.publicite_set.all()
+                                        qs = qs | marque.publicite_set.filter(
+                                            produit=None)
                                     else:
                                         qs = qs | marque.publicite_set.all()
+                                        print("marque")
+                                qs = qs | annonceur.publicite_set.filter(
+                                    marque=None)
+
                             else:
                                 qs = qs | annonceur.publicite_set.all()
             queryset = qs.filter(
