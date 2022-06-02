@@ -241,7 +241,7 @@ class Programme(models.Model):
 
 
 class Jour(models.Model):
-    date = models.DateField(unique=True)
+    date = models.DateField()
     chaine = models.ForeignKey('Chaine', on_delete=models.CASCADE)
 
     def __str__(self):

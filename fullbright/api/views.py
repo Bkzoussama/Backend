@@ -14,6 +14,7 @@ from django.db.models.base import Model
 from django.db.models.query import QuerySet
 from django.db.models import Q
 from rest_framework.serializers import Serializer
+from sqlalchemy import null
 from .models import *
 from .serializers import *
 from django.http import Http404, response
@@ -804,8 +805,13 @@ class ArticleClientView(generics.ListAPIView):
                                     if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
                                             qs = qs | produit.article_set.all()
+                                        qs = qs | marque.article_set.filter(
+                                            produit=None)
                                     else:
                                         qs = qs | marque.article_set.all()
+
+                                    qs = qs | annonceur.article_set.filter(
+                                        marque=None)
                             else:
                                 qs = qs | annonceur.article_set.all()
 
@@ -865,8 +871,12 @@ class PubClientView(generics.ListAPIView):
                                     if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
                                             qs = qs | produit.pub_set.all()
+                                        qs = qs | marque.pub_set.filter(
+                                            produit=None)
                                     else:
                                         qs = qs | marque.pub_set.all()
+                                    qs = qs | marque.pub_set.filter(
+                                        marque=None)
                             else:
                                 qs = qs | annonceur.pub_set.all()
             queryset = qs.filter(
@@ -1208,29 +1218,35 @@ class ProgrammeEtPub(APIView):
         response = []
         i = 0
         for prog in programme:
+            dt = datetime.combine(date.today(), prog.debut) + prog.duree
             response.append({
                 "annonceur": "-",
                 "id": i,
                 "message": prog.message,
                 "debut": prog.debut,
                 "duree": prog.duree,
+                "fin": dt.time(),
                 "type": 1,
                 "lien": prog.id,
                 "ecran": "-"
             })
             i += 1
         for pub in publicite:
+            dt = datetime.combine(date.today(), pub.debut) + pub.duree
             response.append({
                 "annonceur": pub.annonceur.Nom,
                 "id": i,
                 "message": pub.message,
                 "debut": pub.debut,
                 "duree": pub.duree,
+                "fin": dt.time(),
                 "type": 2,
                 "lien": pub.id,
                 "ecran": pub.ecran
             })
             i += 1
+
+        print(response[0])
 
         return Response(sorted(response, key=lambda d: d['debut']))
 
@@ -1251,17 +1267,26 @@ class ChaneiClientView(generics.ListAPIView):
                         for annonceur in contract.annonceurs.all():
                             if contract.marques.filter(NomAnnonceur=annonceur).exists():
                                 for marque in contract.marques.filter(NomAnnonceur=annonceur):
-                                    if contract.produits.filter(NoMarque=marque).exists():
+                                    if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
+                                            print(produit.publicite_set.all())
                                             qs = qs | produit.publicite_set.all()
+                                        qs = qs | marque.publicite_set.filter(
+                                            produit=None)
                                     else:
                                         qs = qs | marque.publicite_set.all()
+                                        print("marque")
+                                qs = qs | annonceur.publicite_set.filter(
+                                    marque=None)
+
                             else:
                                 qs = qs | annonceur.publicite_set.all()
+                                print("annonceur")
+
+            print(qs)
             queryset = qs.filter(
                 confirmed=True
             )
-
             videos = Publicite.objects.none()
             for abonnement in self.request.user.abonnement_set.all():
                 if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
