@@ -99,6 +99,12 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 # ---------------------------------------------------------------------------------------------
 
+class JourAfficheurSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = JourAfficheur
+        fields = "__all__"
+
 
 class AfficheurSerializer(serializers.ModelSerializer):
     numPanneau = serializers.SerializerMethodField()
@@ -150,6 +156,10 @@ class PubSerializer(serializers.ModelSerializer):
     nom_annonceur = serializers.SerializerMethodField()
     nom_marque = serializers.SerializerMethodField()
     nom_produit = serializers.SerializerMethodField()
+    nom_segment = serializers.SerializerMethodField()
+    nom_marche = serializers.SerializerMethodField()
+    nom_famille = serializers.SerializerMethodField()
+    nom_secteur = serializers.SerializerMethodField()
     code_panneau = serializers.SerializerMethodField()
     type_panneau = serializers.SerializerMethodField()
     original = serializers.SerializerMethodField()
@@ -169,6 +179,30 @@ class PubSerializer(serializers.ModelSerializer):
         else:
             return ""
 
+    def get_nom_segment(self, obj):
+        if obj.segment:
+            return obj.segment.Nom
+        else:
+            return ""
+
+    def get_nom_marche(self, obj):
+        if obj.marche:
+            return obj.marche.Nom
+        else:
+            return ""
+
+    def get_nom_famille(self, obj):
+        if obj.famille:
+            return obj.famille.Nom
+        else:
+            return ""
+
+    def get_nom_secteur(self, obj):
+        if obj.secteur:
+            return obj.secteur.Nom
+        else:
+            return ""
+
     def get_code_panneau(self, obj):
         return obj.panneau.code
 
@@ -182,8 +216,8 @@ class PubSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pub
-        fields = ['id', "panneau", 'code_panneau', 'langue', 'annonceur', 'marque', 'produit',  "confirmed", 'original',
-                  'nom_produit', 'nom_annonceur', 'nom_marque', 'date_creation', 'image', 'video', 'circulation', 'code', 'accroche', 'type_panneau']
+        fields = ['id', "panneau", 'code_panneau', 'langue', 'annonceur', 'marque', 'produit', 'segment', 'marche', 'famille', 'secteur',  "confirmed", 'original',
+                  'nom_produit', 'nom_annonceur', 'nom_marque','nom_segment','nom_marche','nom_famille','nom_secteur', 'date_creation', 'jour', 'image', 'video', 'circulation', 'code', 'accroche', 'type_panneau']
 
 
 class PubClientSerializer(serializers.ModelSerializer):
@@ -237,6 +271,30 @@ class AnnonceurSerializer(serializers.ModelSerializer):
     class Meta:
         model = Annonceur
         fields = ('id', 'Nom', "Logo", "numMarque", "nbProduit")
+
+
+class SegmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Segment
+        fields = "__all__"
+
+
+class MarcheSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Marche
+        fields = "__all__"
+
+
+class FamilleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Famille
+        fields = "__all__"
+
+
+class SecteurSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Secteur
+        fields = "__all__"
 
 
 class MarqueSerializer(serializers.ModelSerializer):
@@ -399,7 +457,7 @@ class PubliciteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Publicite
-        fields = ['id', 'debut', "language", "message", "duree", "rang", "encombrement",
+        fields = ['id', 'debut', 'fin', "language", "message", "rang", "encombrement",
                   "ecran", 'annonceur', 'marque', "produit", "video",
                   "confirmed", "jour", "nom_annonceur", "nom_marque", "nom_produit", "nom_chaine"]
 

@@ -31,8 +31,8 @@ import jwt
 from fullbright.settings import SIMPLE_JWT
 from users.serializers import *
 from rest_framework import permissions
-from datetime import datetime
 import pandas as pd
+from datetime import date, datetime, time, timedelta
 
 
 class JournalPermissions(permissions.BasePermission):
@@ -252,6 +252,23 @@ class Articlesearch(generics.ListAPIView):
 
 # ---------------------------------------------------------------------------------------------
 
+
+class JourAfficheurView(generics.ListCreateAPIView):
+    serializer_class = JourAfficheurSerializer
+    permission_classes = [IsAuthenticated & AfficheurPermissions]
+
+    def get_queryset(self):
+        queryset = JourAfficheur.objects.all()
+        return queryset
+
+
+class JourAfficheurDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & AfficheurPermissions]
+    queryset = JourAfficheur.objects.all()
+    serializer_class = JourAfficheurSerializer
+    lookup_fields = ['pk']
+
+
 # API pour la table Afficheur :
 # AfficheurView : pour  la recuperation de la table entiere.
 # AfficheurDetail : pour get,update,delete pour les instances
@@ -334,8 +351,10 @@ class PubViewFalse(generics.ListCreateAPIView):
 
     def get_queryset(self):
         nom = self.request.query_params.get('panneau')
+        jour = self.request.query_params.get('jour')
+
         queryset = Pub.objects.filter(
-            panneau=nom, confirmed=True, circulation=False)
+            panneau=nom, jour=jour, confirmed=True, circulation=False)
         return queryset
 
 
@@ -345,8 +364,9 @@ class PubViewTrue(generics.ListCreateAPIView):
 
     def get_queryset(self):
         nom = self.request.query_params.get('panneau')
+        jour = self.request.query_params.get('jour')
         queryset = Pub.objects.filter(
-            panneau=nom, confirmed=True, circulation=True)
+            panneau=nom, jour=jour, confirmed=True, circulation=True)
         return queryset
 
 
@@ -355,8 +375,11 @@ class PubCount(APIView):
 
     def get(self, request, format=None):
         nom = self.request.query_params.get('panneau')
-        countF = Pub.objects.filter(panneau=nom, circulation=False).count()
-        countT = Pub.objects.filter(panneau=nom, circulation=True).count()
+        jour = self.request.query_params.get('jour')
+        countF = Pub.objects.filter(
+            panneau=nom, circulation=False, jour=jour).count()
+        countT = Pub.objects.filter(
+            panneau=nom, circulation=True, jour=jour).count()
         count = {"countF": countF, "countT": countT}
         return Response(count)
 
@@ -458,6 +481,93 @@ class Annonceursearch(generics.ListAPIView):
         return queryset
 
 
+class SegmentView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = SegmentSerializer
+    pagination_class = MyPagination
+    queryset = Segment.objects.all()
+
+
+class GetSegmentsView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = SegmentSerializer
+    queryset = Segment.objects.all()
+
+
+class SegmentDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    queryset = Segment.objects.all()
+    serializer_class = SegmentSerializer
+    lookup_fields = ['pk']
+
+############################################################
+
+
+class MarcheView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = MarcheSerializer
+    pagination_class = MyPagination
+    queryset = Marche.objects.all()
+
+
+class GetMarchesView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = MarcheSerializer
+    queryset = Marche.objects.all()
+
+
+class MarcheDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    queryset = Marche.objects.all()
+    serializer_class = MarcheSerializer
+    lookup_fields = ['pk']
+
+############################################################
+
+
+class FamilleView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = FamilleSerializer
+    pagination_class = MyPagination
+    queryset = Famille.objects.all()
+
+
+class GetFamillesView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = FamilleSerializer
+    queryset = Famille.objects.all()
+
+
+class FamilleDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    queryset = Famille.objects.all()
+    serializer_class = FamilleSerializer
+    lookup_fields = ['pk']
+
+############################################################
+
+
+class SecteurView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = SecteurSerializer
+    pagination_class = MyPagination
+    queryset = Secteur.objects.all()
+
+class GetSecteursView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = SecteurSerializer
+    queryset = Secteur.objects.all()
+
+
+class SecteurDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    queryset = Secteur.objects.all()
+    serializer_class = SecteurSerializer
+    lookup_fields = ['pk']
+
+############################################################
+
+
 class MarqueView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & AnnonceurPermissions]
     serializer_class = MarqueSerializer
@@ -469,6 +579,13 @@ class MarqueView(generics.ListCreateAPIView):
         return queryset
 
 
+class MarqueDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    queryset = Marque.objects.all()
+    serializer_class = MarqueSerializer
+    lookup_fields = ['pk']
+
+
 class MarqueExiste(APIView):
     permission_classes = [IsAuthenticated & AnnonceurPermissions]
 
@@ -476,13 +593,6 @@ class MarqueExiste(APIView):
         nom = self.request.query_params.get('marque')
         bool = Marque.objects.filter(Nom=nom).exists()
         return Response(bool)
-
-
-class MarqueDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated & AnnonceurPermissions]
-    queryset = Marque.objects.all()
-    serializer_class = MarqueSerializer
-    lookup_fields = ['pk']
 
 
 class MarqueSearch(generics.ListAPIView):
@@ -1218,36 +1328,32 @@ class ProgrammeEtPub(APIView):
         response = []
         i = 0
         for prog in programme:
-            dt = datetime.combine(date.today(), prog.debut) + prog.duree
             response.append({
                 "annonceur": "-",
                 "id": i,
                 "message": prog.message,
                 "debut": prog.debut,
-                "duree": prog.duree,
-                "fin": dt.time(),
+                "duree": datetime.combine(date.today(), prog.fin) - datetime.combine(date.today(), prog.debut),
+                "fin": prog.fin,
                 "type": 1,
                 "lien": prog.id,
                 "ecran": "-"
             })
             i += 1
         for pub in publicite:
-            dt = datetime.combine(date.today(), pub.debut) + pub.duree
             response.append({
                 "annonceur": pub.annonceur.Nom,
                 "id": i,
                 "message": pub.message,
                 "debut": pub.debut,
-                "duree": pub.duree,
-                "fin": dt.time(),
+                "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut),
+
+                "fin": pub.fin,
                 "type": 2,
                 "lien": pub.id,
                 "ecran": pub.ecran
             })
             i += 1
-
-        print(response[0])
-
         return Response(sorted(response, key=lambda d: d['debut']))
 
 
@@ -1306,10 +1412,11 @@ class ChaneiClientView(generics.ListAPIView):
                     "id": i,
                     "message": prog.message,
                     "debut": prog.debut,
-                    "duree": prog.duree,
+                    "duree": datetime.combine(date.today(), prog.fin) - datetime.combine(date.today(), prog.debut),
+                    "fin": prog.fin,
                     "type": 1,
                     "lien": prog.id,
-                    "ecran": ""
+                    "ecran": "-"
                 })
                 i += 1
             for pub in videos:
@@ -1319,7 +1426,8 @@ class ChaneiClientView(generics.ListAPIView):
                     "id": i,
                     "message": pub.message,
                     "debut": pub.debut,
-                    "duree": pub.duree,
+                    "duree": datetime.combine(date.today(), prog.fin) - datetime.combine(date.today(), prog.debut),
+                    "fin": pub.fin,
                     "type": 2,
                     "lien": pub.id,
                     "ecran": pub.ecran

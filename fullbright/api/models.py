@@ -75,10 +75,16 @@ class Apc (models.Model):
         return self.nom_APC
 
 
+class JourAfficheur(models.Model):
+    date = models.DateField()
+
+    def __str__(self):
+        return str(self.date)+"  ===>  "+str(self.id)
+
+
 # -------------------------- definition de la table Afficheur ------------------------------------------
 class Afficheur(models.Model):
     nom_afficheur = models.CharField(max_length=30, blank=True)
-    date_creation = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.nom_afficheur
@@ -132,6 +138,8 @@ class Pub(models.Model):
     panneau = models.ForeignKey(Panneau, on_delete=models.CASCADE)
     langue = models.CharField(max_length=20, choices=choix_langue)
     date_creation = models.DateField(auto_now_add=True)
+    jour = models.ForeignKey(
+        'JourAfficheur', on_delete=models.CASCADE, default=1)
     image = models.ImageField(
         upload_to="media", null=True, blank=True, default="")
     video = models.FileField(
@@ -142,6 +150,15 @@ class Pub(models.Model):
         'Marque', on_delete=models.CASCADE, null=True, blank=True)
     produit = models.ForeignKey(
         'Produit', on_delete=models.CASCADE, null=True, blank=True)
+    segment = models.ForeignKey(
+        'Segment', on_delete=models.CASCADE, null=True, blank=True)
+    marche = models.ForeignKey(
+        'Marche', on_delete=models.CASCADE, null=True, blank=True)
+    famille = models.ForeignKey(
+        'Famille', on_delete=models.CASCADE, null=True, blank=True)
+    secteur = models.ForeignKey(
+        'Secteur', on_delete=models.CASCADE, null=True, blank=True)
+
     confirmed = models.BooleanField(default=False)
     circulation = models.BooleanField(default=True)
     code = models.CharField(max_length=50,  null=True, blank=True)
@@ -156,6 +173,34 @@ class Annonceur(models.Model):
 
     Nom = models.CharField(max_length=100, unique=True)
     Logo = models.ImageField(upload_to="media", default="")
+
+    def __str__(self):
+        return str(self.id)
+
+
+class Segment(models.Model):
+    Nom = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return str(self.id)
+
+
+class Marche(models.Model):
+    Nom = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return str(self.id)
+
+
+class Famille(models.Model):
+    Nom = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return str(self.id)
+
+
+class Secteur(models.Model):
+    Nom = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return str(self.id)
@@ -186,7 +231,7 @@ class Abonnement(models.Model):
         ('P', 'Panneau'),
         ('C', 'Chaine'),
     ]
-    Nom = models.CharField(max_length=100, unique=True)
+    Nom = models.CharField(max_length=100)
     service = models.CharField(max_length=1, default="", choices=services)
     date_debut = models.DateField()
     date_fin = models.DateField()
@@ -220,24 +265,27 @@ class Publicite(models.Model):
         'Marque', on_delete=models.CASCADE, null=True, blank=True)
     produit = models.ForeignKey(
         'Produit', on_delete=models.CASCADE, null=True, blank=True)
+
     video = models.FileField(
         upload_to="media",  default="", null=True, blank=True)
     debut = models.TimeField()
-    duree = models.DurationField()
+    fin = models.TimeField(
+        default=datetime.datetime.now().strftime("%H:%M:%S"))
 
     rang = models.IntegerField(null=True, blank=True)
     encombrement = models.IntegerField(null=True, blank=True)
     ecran = models.IntegerField()
     language = models.CharField(max_length=2, default="", choices=languages)
-    message = models.CharField(max_length=120, default="")
+    message = models.CharField(max_length=12000, default="")
     confirmed = models.BooleanField(default=False)
 
 
 class Programme(models.Model):
     jour = models.ForeignKey('Jour', on_delete=models.CASCADE)
-    message = models.CharField(max_length=120, default="")
+    message = models.CharField(max_length=1200, default="")
     debut = models.TimeField()
-    duree = models.DurationField()
+    fin = models.TimeField(
+        default=datetime.datetime.now().strftime("%H:%M:%S"))
 
 
 class Jour(models.Model):

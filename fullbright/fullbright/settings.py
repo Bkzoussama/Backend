@@ -91,15 +91,16 @@ WSGI_APPLICATION = 'fullbright.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 # DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'promedia',
-#         'USER': 'user123',
-#         'PASSWORD': 'user123',
-#         'HOST': 'localhost',
-#         'PORT': '',
-#     }
-# }
+#      'default': {
+#          'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#          'NAME': 'promedia',
+#          'USER': 'user123',
+#          'PASSWORD': 'user123',
+#          'HOST': 'localhost',
+#          'PORT': '',
+#      }
+#  }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -125,6 +126,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 REST_FRAMEWORK = {
 
     'DATETIME_FORMAT': "%m/%d/%Y, %H:%M:%S",
@@ -132,6 +134,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }

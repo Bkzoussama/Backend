@@ -30,6 +30,9 @@ urlpatterns = [
     path('articles/client/', getProduitMarqueAnnonceur.as_view()),
 
 
+    path('jourafficheur/', JourAfficheurView.as_view()),
+    path('jourafficheur/<int:pk>/', JourAfficheurDetail.as_view()),
+
     path('afficheur/', getAfficheurInfo.as_view()),
     path('afficheur/post/', AfficheurView.as_view()),
     path('afficheur/post/<int:pk>/', AfficheurDetail.as_view()),
@@ -56,10 +59,32 @@ urlpatterns = [
     path('annonceur/<int:pk>/', AnnonceurDetail.as_view()),
     path('annonceur/search/', Annonceursearch.as_view()),
 
+    path('segment/', SegmentView.as_view()),
+    path('segment/<int:pk>/', SegmentDetail.as_view()),
+    path('getsegments/', GetSegmentsView.as_view()),
+
+
+    path('marche/', MarcheView.as_view()),
+    path('marche/<int:pk>/', MarcheDetail.as_view()),
+    path('getmarches/', GetMarchesView.as_view()),
+
+
+    path('famille/', FamilleView.as_view()),
+    path('famille/<int:pk>/', FamilleDetail.as_view()),
+    path('getfamilles/', GetFamillesView.as_view()),
+
+
+    path('secteur/', SecteurView.as_view()),
+    path('secteur/<int:pk>/', SecteurDetail.as_view()),
+    path('getsecteurs/', GetSecteursView.as_view()),
+
+
+
+
     path('marque/', MarqueView.as_view()),
+    path('marque/<int:pk>/', MarqueDetail.as_view()),
     path('marque/exists/', MarqueExiste.as_view()),
     path('marque/contract', MarqueSearchContract.as_view()),
-    path('marque/<int:pk>/', MarqueDetail.as_view()),
     path('marque/filter', MarqueFilter.as_view()),
     path('marque/search/', MarqueSearch.as_view()),
     path('marque/filterforcontract', MarqueFilterForContract.as_view()),
