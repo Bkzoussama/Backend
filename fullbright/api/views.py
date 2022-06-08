@@ -14,7 +14,6 @@ from django.db.models.base import Model
 from django.db.models.query import QuerySet
 from django.db.models import Q
 from rest_framework.serializers import Serializer
-from sqlalchemy import null
 from .models import *
 from .serializers import *
 from django.http import Http404, response
