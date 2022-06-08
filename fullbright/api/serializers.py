@@ -191,15 +191,15 @@ class PubSerializer(serializers.ModelSerializer):
         else:
             return ""
 
-    def get_nom_famille(self, obj):
-        if obj.famille:
-            return obj.famille.Nom
+    def get_nom_marche(self, obj):
+        if obj.marche:
+            return obj.marche.Nom
         else:
             return ""
 
-    def get_nom_secteur(self, obj):
-        if obj.secteur:
-            return obj.secteur.Nom
+    def get_nom_produit(self, obj):
+        if obj.produit:
+            return obj.produit.Nom
         else:
             return ""
 
@@ -217,7 +217,7 @@ class PubSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pub
         fields = ['id', "panneau", 'code_panneau', 'langue', 'annonceur', 'marque', 'produit', 'segment', 'marche', 'famille', 'secteur',  "confirmed", 'original',
-                  'nom_produit', 'nom_annonceur', 'nom_marque','nom_segment','nom_marche','nom_famille','nom_secteur', 'date_creation', 'jour', 'image', 'video', 'circulation', 'code', 'accroche', 'type_panneau']
+                  'nom_produit', 'nom_annonceur', 'nom_marque', 'date_creation', 'jour', 'image', 'video', 'circulation', 'code', 'accroche', 'type_panneau']
 
 
 class PubClientSerializer(serializers.ModelSerializer):
