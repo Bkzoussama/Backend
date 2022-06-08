@@ -184,6 +184,12 @@ class Segment(models.Model):
     def __str__(self):
         return str(self.id)
 
+class radio(models.Model):
+    Nom = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return str(self.id)
+
 
 class Marche(models.Model):
     Nom = models.CharField(max_length=100, unique=True)
