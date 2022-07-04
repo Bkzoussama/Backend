@@ -20,6 +20,11 @@ class ArticleClientSerializer(serializers.ModelSerializer):
     nom_marque = serializers.SerializerMethodField()
     nom_produit = serializers.SerializerMethodField()
 
+    nom_segment = serializers.SerializerMethodField()
+    nom_marche = serializers.SerializerMethodField()
+    nom_famille = serializers.SerializerMethodField()
+    nom_secteur = serializers.SerializerMethodField()
+
     numEdition = serializers.SerializerMethodField()
     dateEdition = serializers.SerializerMethodField()
     nomJournal = serializers.SerializerMethodField()
@@ -48,11 +53,35 @@ class ArticleClientSerializer(serializers.ModelSerializer):
         else:
             return "indefinie"
 
+    def get_nom_segment(self, obj):
+        if obj.segment:
+            return obj.segment.Nom
+        else:
+            return ""
+
+    def get_nom_marche(self, obj):
+        if obj.marche:
+            return obj.marche.Nom
+        else:
+            return ""
+
+    def get_nom_secteur(self, obj):
+        if obj.secteur:
+            return obj.secteur.Nom
+        else:
+            return ""
+
+    def get_nom_famille(self, obj):
+        if obj.famille:
+            return obj.famille.Nom
+        else:
+            return ""
+
     class Meta:
         model = Article
         fields = ['id', 'date_creation', "language", "edition", "accroche", "couleur", "num_page",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
-                  "numEdition", "dateEdition", "nomJournal", "nom_annonceur",
+                  "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
 
 
@@ -61,6 +90,11 @@ class ArticleSerializer(serializers.ModelSerializer):
     nom_marque = serializers.SerializerMethodField()
     nom_produit = serializers.SerializerMethodField()
 
+    nom_segment = serializers.SerializerMethodField()
+    nom_marche = serializers.SerializerMethodField()
+    nom_famille = serializers.SerializerMethodField()
+    nom_secteur = serializers.SerializerMethodField()
+
     numEdition = serializers.SerializerMethodField()
     dateEdition = serializers.SerializerMethodField()
     nomJournal = serializers.SerializerMethodField()
@@ -89,11 +123,35 @@ class ArticleSerializer(serializers.ModelSerializer):
         else:
             return "indefinie"
 
+    def get_nom_segment(self, obj):
+        if obj.segment:
+            return obj.segment.Nom
+        else:
+            return ""
+
+    def get_nom_marche(self, obj):
+        if obj.marche:
+            return obj.marche.Nom
+        else:
+            return ""
+
+    def get_nom_secteur(self, obj):
+        if obj.secteur:
+            return obj.secteur.Nom
+        else:
+            return ""
+
+    def get_nom_famille(self, obj):
+        if obj.famille:
+            return obj.famille.Nom
+        else:
+            return ""
+
     class Meta:
         model = Article
-        fields = ['id', 'date_creation', "language", "edition", "accroche", "couleur", "num_page",
-                  "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
-                  "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'confirmed',
+        fields = ['id', 'code', 'date_creation', "language", "edition", "accroche", "couleur", "num_page",
+                  "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", 'segment', 'marche', 'famille', 'secteur', "image",
+                  "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'confirmed', 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
 
 
@@ -191,15 +249,15 @@ class PubSerializer(serializers.ModelSerializer):
         else:
             return ""
 
-    def get_nom_marche(self, obj):
-        if obj.marche:
-            return obj.marche.Nom
+    def get_nom_secteur(self, obj):
+        if obj.secteur:
+            return obj.secteur.Nom
         else:
             return ""
 
-    def get_nom_produit(self, obj):
-        if obj.produit:
-            return obj.produit.Nom
+    def get_nom_famille(self, obj):
+        if obj.famille:
+            return obj.famille.Nom
         else:
             return ""
 
@@ -216,8 +274,8 @@ class PubSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pub
-        fields = ['id', "panneau", 'code_panneau', 'langue', 'annonceur', 'marque', 'produit', 'segment', 'marche', 'famille', 'secteur',  "confirmed", 'original',
-                  'nom_produit', 'nom_annonceur', 'nom_marque', 'date_creation', 'jour', 'image', 'video', 'circulation', 'code', 'accroche', 'type_panneau']
+        fields = ['id', 'prix', "panneau", 'code_panneau', 'langue', 'annonceur', 'marque', 'produit', 'segment', 'marche', 'famille', 'secteur',  "confirmed", 'original',
+                  'nom_produit', 'nom_annonceur', 'nom_marque', 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment', 'date_creation', 'jour', 'image', 'video', 'circulation', 'code', 'accroche', 'type_panneau']
 
 
 class PubClientSerializer(serializers.ModelSerializer):
@@ -437,6 +495,11 @@ class PubliciteSerializer(serializers.ModelSerializer):
     nom_annonceur = serializers.SerializerMethodField()
     nom_chaine = serializers.SerializerMethodField()
 
+    nom_segment = serializers.SerializerMethodField()
+    nom_marche = serializers.SerializerMethodField()
+    nom_famille = serializers.SerializerMethodField()
+    nom_secteur = serializers.SerializerMethodField()
+
     def get_nom_annonceur(self, obj):
         return obj.annonceur.Nom
 
@@ -455,10 +518,34 @@ class PubliciteSerializer(serializers.ModelSerializer):
         else:
             return "indefine"
 
+    def get_nom_segment(self, obj):
+        if obj.segment:
+            return obj.segment.Nom
+        else:
+            return ""
+
+    def get_nom_marche(self, obj):
+        if obj.marche:
+            return obj.marche.Nom
+        else:
+            return ""
+
+    def get_nom_secteur(self, obj):
+        if obj.secteur:
+            return obj.secteur.Nom
+        else:
+            return ""
+
+    def get_nom_famille(self, obj):
+        if obj.famille:
+            return obj.famille.Nom
+        else:
+            return ""
+
     class Meta:
         model = Publicite
-        fields = ['id', 'debut', 'fin', "language", "message", "rang", "encombrement",
-                  "ecran", 'annonceur', 'marque', "produit", "video",
+        fields = ['id', 'code', 'debut', 'fin', "language", "message", "rang", "encombrement", 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
+                  "ecran", 'annonceur', 'marque', "produit", 'segment', 'marche', 'famille', 'secteur', "video",
                   "confirmed", "jour", "nom_annonceur", "nom_marque", "nom_produit", "nom_chaine"]
 
 
@@ -483,4 +570,102 @@ class JourSerializer(serializers.ModelSerializer):
 class ChaineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chaine
+        fields = "__all__"
+
+# RADIO >>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+class PubliciteRadioSerializer(serializers.ModelSerializer):
+    nom_produit = serializers.SerializerMethodField()
+    nom_marque = serializers.SerializerMethodField()
+    nom_annonceur = serializers.SerializerMethodField()
+    nom_radio = serializers.SerializerMethodField()
+
+    nom_segment = serializers.SerializerMethodField()
+    nom_marche = serializers.SerializerMethodField()
+    nom_famille = serializers.SerializerMethodField()
+    nom_secteur = serializers.SerializerMethodField()
+
+    def get_nom_annonceur(self, obj):
+        return obj.annonceur.Nom
+
+    def get_nom_radio(self, obj):
+        return obj.jour.radio.nom
+
+    def get_nom_marque(self, obj):
+        if obj.marque:
+            return obj.marque.Nom
+        else:
+            return "indefine"
+
+    def get_nom_produit(self, obj):
+        if obj.produit:
+            return obj.produit.Nom
+        else:
+            return "indefine"
+
+    def get_nom_segment(self, obj):
+        if obj.segment:
+            return obj.segment.Nom
+        else:
+            return ""
+
+    def get_nom_marche(self, obj):
+        if obj.marche:
+            return obj.marche.Nom
+        else:
+            return ""
+
+    def get_nom_secteur(self, obj):
+        if obj.secteur:
+            return obj.secteur.Nom
+        else:
+            return ""
+
+    def get_nom_famille(self, obj):
+        if obj.famille:
+            return obj.famille.Nom
+        else:
+            return ""
+
+    class Meta:
+        model = PubliciteRadio
+        fields = ['id', 'code', 'debut', 'fin', "language", "message", "rang", "encombrement", 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
+                  "ecran", 'annonceur', 'marque', "produit", "son", 'segment', 'marche', 'famille', 'secteur',
+                  "confirmed", "jour", "nom_annonceur", "nom_marque", "nom_produit", "nom_radio"]
+
+
+class ProgrammeRadioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProgrammeRadio
+        fields = "__all__"
+
+
+class JourRadioSerializer(serializers.ModelSerializer):
+
+    nom_radio = serializers.SerializerMethodField()
+
+    def get_nom_radio(self, obj):
+        return obj.radio.nom
+
+    class Meta:
+        model = JourRadio
+        fields = "__all__"
+
+
+class RadioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Radio
+        fields = "__all__"
+
+
+class TarifChaineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TarifChaine
+        fields = "__all__"
+
+
+class TarifRadioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TarifRadio
         fields = "__all__"

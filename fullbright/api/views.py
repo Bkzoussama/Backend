@@ -74,6 +74,16 @@ class ChainePermissions(permissions.BasePermission):
         return False
 
 
+class RadioPermissions(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method in ['POST', 'GET'] and request.user.groups.filter(name="Voir radio").exists():
+            return True
+        if request.method in ['POST', 'GET', 'PUT', 'PATCH', 'DELETE'] and request.user.groups.filter(name="Modifier radio").exists():
+            return True
+        return False
+
+
 class MyPagination(pagination.PageNumberPagination):
     page_size = 6
     page_size_query_param = 'page_size'
@@ -202,6 +212,26 @@ class ArticleView(generics.ListCreateAPIView):
         queryset = Article.objects.filter(
             edition=edition, confirmed=True).order_by('-date_creation')
         return queryset
+
+
+class PostArticleView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & JournalPermissions]
+    serializer_class = ArticleSerializer
+
+    def post(self, request, format=None):
+        data = request.data
+        code = ""
+        count = Article.objects.filter(
+            date_creation=date.today()).values_list('code', flat=True).distinct().count()
+        code = date.today().strftime("%d%m%Y") + "-" + "JR" + "-" + \
+            "{0:0=3d}".format(count+1) + "-" + data['language']
+        data['code'] = code
+        data['confirmed'] = False
+        serializer = ArticleSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ArticleConfirmed(generics.ListAPIView):
@@ -430,7 +460,7 @@ class PubFilter(generics.ListAPIView):
 
 
 class PubCodes(APIView):
-    #permission_classes = [IsAuthenticated & AfficheurPermissions]
+    # permission_classes = [IsAuthenticated & AfficheurPermissions]
 
     def get(self, request, format=None):
         codes = Pub.objects.filter(confirmed=True).values_list(
@@ -551,6 +581,7 @@ class SecteurView(generics.ListCreateAPIView):
     serializer_class = SecteurSerializer
     pagination_class = MyPagination
     queryset = Secteur.objects.all()
+
 
 class GetSecteursView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & AnnonceurPermissions]
@@ -1136,6 +1167,31 @@ class PubLinkClient(generics.ListAPIView):
             return qs.filter(id=id)
 
 
+class PubliciteLinkClient(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Publicite.objects.all()
+    serializer_class = PubliciteSerializer
+
+    def get_queryset(self):
+        id = self.request.query_params.get('id')
+        if self.request.user.is_client == True:
+            qs = Pub.objects.none()
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "P":
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+                                            qs = qs | produit.publicite_set.all()
+                                    else:
+                                        qs = qs | marque.publicite_set.all()
+                            else:
+                                qs = qs | annonceur.publicite_set.all()
+            return qs.filter(id=id)
+
+
 class send_email(APIView):
     permission_classes = [IsAdminUser]
 
@@ -1197,8 +1253,8 @@ class send_email(APIView):
 			</tr>
 		</thead>
 		<tbody style="border-bottom: 1px solid #dddddd;">
-        
-        
+
+
         """
             for article in qs:
                 acc = ""
@@ -1215,7 +1271,7 @@ class send_email(APIView):
                         text-overflow: ellipsis;
                         display: -webkit-box;
                         -webkit-line-clamp: 1; /* number of lines to show */
-                                line-clamp: 1; 
+                                line-clamp: 1;
                         -webkit-box-orient: vertical;" >
                             {}
                         </div>
@@ -1233,7 +1289,7 @@ class send_email(APIView):
                         border-radius: 7px;
                         background-color: #0070f3;
                         color: white;
-                        
+
                             ">
                             <a style="color: white;
                             text-decoration: none;" href="{} ">
@@ -1259,10 +1315,156 @@ class send_email(APIView):
 # 'fayssalbenaissa1513@gmail.com'
 
 
+class send_email_chaine(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, format=None):
+
+        print("##########################################")
+        clients = User.objects.filter(is_client=True, is_active=True)
+        jours = Jour.objects.filter(date=date.today())
+        print(jours)
+        print("##########################################")
+
+        for client in clients:
+
+            qs = Publicite.objects.none()
+            for abonnement in client.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+                                            qs = qs | produit.publicite_set.filter(
+                                                jour__in=jours)
+                                    else:
+                                        qs = qs | marque.publicite_set.filter(
+                                            jour__in=jours)
+                            else:
+                                qs = qs | annonceur.publicite_set.filter(
+                                    jour__in=jours)
+
+            print(qs)
+            print(client.email)
+            print("##########################################")
+
+            emailm = """
+        <!DOCTYPE html>
+<html>
+	<table style="border-collapse: collapse;
+	margin: 25px 0;
+	font-size: 0.9em;
+	min-width: 400px;
+	border-radius: 5px 5px 0 0;
+	overflow: hidden;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);width: 100%;font-family: sans-serif;" >
+		<thead style="background-color: #0070f3;
+		color: #ffffff;
+		text-align: left;
+		font-weight: bold;">
+			<tr style="background-color: #0070f3;
+			color: #ffffff;
+			text-align: left;
+			font-weight: bold;">
+				<th style="padding: 12px 15px;">Chaine</th>
+				<th style="padding: 12px 15px;">Message</th>
+				<th style="padding: 12px 15px;">Date</th>
+				<th style="padding: 12px 15px;">Annonceur</th>
+				<th style="padding: 12px 15px;">Marque</th>
+				<th style="padding: 12px 15px;">Produit</th>
+				<th style="padding: 12px 15px;">Lien</th>
+			</tr>
+		</thead>
+		<tbody style="border-bottom: 1px solid #dddddd;">
+
+
+        """
+            for article in qs:
+                acc = ""
+                if len(article.message) > 70:
+                    acc = article.message[:70]+" ..."
+                else:
+                    acc = article.message
+                emailm = emailm+"""
+                <tr style="border-bottom: 1px solid #dddddd;color="black">
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td>
+                        <div style="
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 1; /* number of lines to show */
+                                line-clamp: 1;
+                        -webkit-box-orient: vertical;" >
+                            {}
+                        </div>
+                    </td>
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td style="padding: 12px 15px;">{}</td>
+                    <td style="padding: 12px 15px;">
+                        <button style="
+                        border: none;
+                        padding: 0 10px;
+                        height: 35px;
+                        line-height: 25px;
+                        border-radius: 7px;
+                        background-color: #0070f3;
+                        color: white;
+
+                            ">
+                            <a style="color: white;
+                            text-decoration: none;" href="{} ">
+                                lien
+                            </a>
+                        </button>
+                    </td>
+
+                </tr>
+
+                """.format(article.jour.chaine.nom, acc, article.jour.date, article.annonceur.Nom, article.marque.Nom if article.marque else '', article.produit.Nom if article.produit else '', "http://client.promediaconseils.com/pub/link/"+str(article.id))
+
+            emailm = emailm + """</tbody>
+                                    </table>
+                                </html>"""
+
+            if len(qs) != 0:
+                email = EmailMessage(
+                    'A new mail from ProMediaConseils!', emailm, to=["ghecharaf@gmail.com"])
+                email.content_subtype = "html"
+                email.send()
+        return Response("ok")
+
+
 class PubliciteView(generics.ListCreateAPIView):
     serializer_class = PubliciteSerializer
     queryset = Publicite.objects.all()
     permission_classes = [IsAuthenticated & ChainePermissions]
+
+
+class PostPubliciteView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    serializer_class = PubliciteSerializer
+
+    def post(self, request, format=None):
+        data = request.data
+        code = ""
+        jours = Jour.objects.filter(date=date.today())
+
+        count = Publicite.objects.filter(
+            jour__in=jours).values_list('code', flat=True).distinct().count()
+        code = date.today().strftime("%d%m%Y") + "-" + "TV" + "-" + \
+            "{0:0=3d}".format(count+1) + "-" + data['language']
+        data['code'] = code
+        data['confirmed'] = False
+        serializer = PubliciteSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PubliciteDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -1425,7 +1627,7 @@ class ChaneiClientView(generics.ListAPIView):
                     "id": i,
                     "message": pub.message,
                     "debut": pub.debut,
-                    "duree": datetime.combine(date.today(), prog.fin) - datetime.combine(date.today(), prog.debut),
+                    "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut),
                     "fin": pub.fin,
                     "type": 2,
                     "lien": pub.id,
@@ -1484,3 +1686,729 @@ class PubViewTest(APIView):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# RAdio >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+class SonConfirmedCount(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, format=None):
+        count = PubliciteRadio.objects.filter(
+            confirmed=False).count()
+        return Response(count)
+
+
+class SonConfirmation(generics.ListCreateAPIView):
+    permission_classes = [IsAdminUser]
+    queryset = PubliciteRadio.objects.all()
+    serializer_class = PubliciteRadioSerializer
+    pagination_class = MyPagination
+
+    def get_queryset(self):
+        return PubliciteRadio.objects.filter(confirmed=False)
+
+
+class RadioView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = Radio.objects.all().order_by("nom")
+    serializer_class = RadioSerializer
+    pagination_class = MyPagination
+
+
+class RadioAllView(generics.ListAPIView):
+    queryset = Radio.objects.all().order_by("nom")
+    serializer_class = RadioSerializer
+
+
+class RadioDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = Radio.objects.all()
+    serializer_class = RadioSerializer
+    lookup_fields = ['pk']
+
+
+class Radiosearch(generics.ListAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    serializer_class = RadioSerializer
+
+    def get_queryset(self):
+        nom = self.request.query_params.get('nom')
+        if nom == None:
+            return Radio.objects.all()
+        queryset = Radio.objects.filter(nom=nom)
+
+        return queryset
+
+
+class PubliciteRadioView(generics.ListCreateAPIView):
+    serializer_class = PubliciteRadioSerializer
+    queryset = PubliciteRadio.objects.all()
+    permission_classes = [IsAuthenticated & ChainePermissions]
+
+
+class PostPubliciteRadioView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    serializer_class = PubliciteRadioSerializer
+
+    def post(self, request, format=None):
+        data = request.data
+        code = ""
+        jours = JourRadio.objects.filter(date=date.today())
+
+        count = PubliciteRadio.objects.filter(
+            jour__in=jours).values_list('code', flat=True).distinct().count()
+        code = date.today().strftime("%d%m%Y") + "-" + "RD" + "-" + \
+            "{0:0=3d}".format(count+1) + "-" + data['language']
+        data['code'] = code
+        data['confirmed'] = False
+        serializer = PubliciteRadioSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PubliciteRadioDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = PubliciteRadio.objects.all()
+    serializer_class = PubliciteRadioSerializer
+    lookup_fields = ['pk']
+
+
+class PubliciteRadioClientDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = PubliciteRadio.objects.all()
+    serializer_class = PubliciteRadioSerializer
+    lookup_fields = ['pk']
+
+
+class ProgrammeRadioView(generics.ListCreateAPIView):
+    serializer_class = ProgrammeRadioSerializer
+    queryset = ProgrammeRadio.objects.all()
+    permission_classes = [IsAuthenticated & ChainePermissions]
+
+
+class UpdateProgrammeRadioView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ProgrammeRadio.objects.all()
+    serializer_class = ProgrammeRadioSerializer
+    permission_classes = [IsAuthenticated & ChainePermissions]
+
+
+class JourRadioDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = JourRadio.objects.all()
+    serializer_class = JourRadio
+    lookup_fields = ['pk']
+
+
+class JourRadioView(generics.ListCreateAPIView):
+    serializer_class = JourRadioSerializer
+    permission_classes = [IsAuthenticated & ChainePermissions]
+
+    def get_queryset(self):
+        id = self.request.query_params.get('id')
+        queryset = JourRadio.objects.filter(radio=id).order_by('date')
+        return queryset
+
+
+class JourRadioViewClient(generics.ListAPIView):
+    serializer_class = JourRadioSerializer
+
+    def get_queryset(self):
+        id = self.request.query_params.get('id')
+        queryset = JourRadio.objects.filter(radio=id).order_by('date')
+        return queryset
+
+
+class ProgrammeEtPubRadio(APIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+
+    def get(self, request):
+        id = self.request.query_params.get('id')
+        publicite = PubliciteRadio.objects.filter(jour=id, confirmed=True)
+        programme = ProgrammeRadio.objects.filter(jour=id)
+        response = []
+        i = 0
+        for prog in programme:
+            response.append({
+                "annonceur": "-",
+                "id": i,
+                "message": prog.message,
+                "debut": prog.debut,
+                "duree": datetime.combine(date.today(), prog.fin) - datetime.combine(date.today(), prog.debut),
+                "fin": prog.fin,
+                "type": 1,
+                "lien": prog.id,
+                "ecran": "-"
+            })
+            i += 1
+        for pub in publicite:
+            response.append({
+                "annonceur": pub.annonceur.Nom,
+                "id": i,
+                "message": pub.message,
+                "debut": pub.debut,
+                "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut),
+
+                "fin": pub.fin,
+                "type": 2,
+                "lien": pub.id,
+                "ecran": pub.ecran
+            })
+            i += 1
+        return Response(sorted(response, key=lambda d: d['debut']))
+
+
+class RadioClientView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        jour = self.request.query_params.get('id')
+
+        if self.request.user.is_client == True:
+
+            qs = PubliciteRadio.objects.none()
+
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "R":
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+                                            print(
+                                                produit.publiciteradio_set.all())
+                                            qs = qs | produit.publiciteradio_set.all()
+                                        qs = qs | marque.publiciteradio_set.filter(
+                                            produit=None)
+                                    else:
+                                        qs = qs | marque.publiciteradio_set.all()
+                                        print("marque")
+                                qs = qs | annonceur.publiciteradio_set.filter(
+                                    marque=None)
+
+                            else:
+                                qs = qs | annonceur.publiciteradio_set.all()
+                                print("annonceur")
+
+            print(qs)
+            queryset = qs.filter(
+                confirmed=True
+            )
+            videos = PubliciteRadio.objects.none()
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                    for contract in abonnement.contract_set.all():
+                        if JourRadio.objects.filter(id=jour, date__range=(contract.date_debut, contract.date_fin)).exists():
+                            videos = videos | queryset.filter(jour=jour)
+
+            programme = ProgrammeRadio.objects.none()
+            if len(videos):
+                programme = ProgrammeRadio.objects.filter(jour=jour)
+
+            response = []
+            i = 0
+            for prog in programme:
+                response.append({
+                    "annonceur": '-',
+                    "id": i,
+                    "message": prog.message,
+                    "debut": prog.debut,
+                    "duree": datetime.combine(date.today(), prog.fin) - datetime.combine(date.today(), prog.debut),
+                    "fin": prog.fin,
+                    "type": 1,
+                    "lien": prog.id,
+                    "ecran": "-"
+                })
+                i += 1
+            for pub in videos:
+                response.append({
+                    "annonceur": pub.annonceur.Nom,
+
+                    "id": i,
+                    "message": pub.message,
+                    "debut": pub.debut,
+                    "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut),
+                    "fin": pub.fin,
+                    "type": 2,
+                    "lien": pub.id,
+                    "ecran": pub.ecran
+                })
+                i += 1
+
+            return Response(sorted(response, key=lambda d: d['debut']))
+
+
+class TarifChaineView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = TarifChaine.objects.all()
+    serializer_class = TarifChaineSerializer
+
+
+class TarifChaineDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = TarifChaine.objects.all()
+    serializer_class = TarifChaineSerializer
+    lookup_fields = ['pk']
+
+
+class GetTarifChaineView(generics.ListCreateAPIView):
+    serializer_class = TarifChaineSerializer
+    permission_classes = [IsAuthenticated & ChainePermissions]
+
+    def get_queryset(self):
+        id = self.request.query_params.get('id')
+        queryset = TarifChaine.objects.filter(chaine=id).order_by('debut')
+        return queryset
+
+
+class TarifRadioView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = TarifRadio.objects.all()
+    serializer_class = TarifRadioSerializer
+
+
+class TarifRadioDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = TarifRadio.objects.all()
+    serializer_class = TarifRadioSerializer
+    lookup_fields = ['pk']
+
+
+class GetTarifRadioView(generics.ListCreateAPIView):
+    serializer_class = TarifRadioSerializer
+    permission_classes = [IsAuthenticated & ChainePermissions]
+
+    def get_queryset(self):
+        id = self.request.query_params.get('id')
+        queryset = TarifRadio.objects.filter(radio=id).order_by('debut')
+        return queryset
+
+
+class PigeFinaleView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        if self.request.user.is_client == True:
+
+            qs = Publicite.objects.none()
+
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "C":
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+                                            print(produit.publicite_set.all())
+                                            qs = qs | produit.publicite_set.all()
+                                        qs = qs | marque.publicite_set.filter(
+                                            produit=None)
+                                    else:
+                                        qs = qs | marque.publicite_set.all()
+                                        print("marque")
+                                qs = qs | annonceur.publicite_set.filter(
+                                    marque=None)
+
+                            else:
+                                qs = qs | annonceur.publicite_set.all()
+                                print("annonceur")
+
+            print(qs)
+            queryset = qs.filter(
+                confirmed=True
+            )
+            videos = Publicite.objects.none()
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                    for contract in abonnement.contract_set.all():
+                        if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
+                            jours = Jour.objects.filter(date__range=(
+                                timezone.now().date() - timedelta(days=30), timezone.now().date()))
+                            videos = videos | queryset.filter(jour__in=jours)
+
+            response = []
+            i = 0
+            for pub in videos:
+                tarifs = TarifChaine.objects.filter(chaine=pub.jour.chaine)
+                print(tarifs)
+
+                tarif = tarifs.filter(debut__lte=pub.debut, fin__gte=pub.debut)
+                print(tarif)
+
+                if(len(tarif) < 1):
+                    tarif = ""
+
+                programmeAvant = Programme.objects.filter(
+                    jour=pub.jour, fin__lte=pub.debut)
+                programmeApres = Programme.objects.filter(
+                    jour=pub.jour, debut__gte=pub.fin)
+
+                if(len(programmeAvant) < 1):
+                    programmeAvant = Publicite.objects.filter(
+                        jour=pub.jour, fin__lte=pub.debut)
+                if(len(programmeApres) < 1):
+                    programmeApres = Publicite.objects.filter(
+                        jour=pub.jour, debut__gte=pub.fin)
+
+                marque = '/'
+                produit = '/'
+                segment = '/'
+                marche = '/'
+                famille = '/'
+                secteur = '/'
+
+                if(pub.marque):
+                    marque = pub.marque.Nom
+
+                if(pub.produit):
+                    produit = pub.produit.Nom
+
+                if(pub.segment):
+                    segment = pub.segment.Nom
+
+                if(pub.marche):
+                    marche = pub.marche.Nom
+
+                if(pub.famille):
+                    famille = pub.famille.Nom
+
+                if(pub.secteur):
+                    secteur = pub.secteur.Nom
+
+                response.append({
+                    "id": i,
+                    'media': 'TV',
+                    'date': pub.jour.date,
+                    'support': pub.jour.chaine.nom,
+                    "debut": pub.debut,
+                    "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) if datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) >= timedelta(seconds=1) else datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) + timedelta(hours=24),
+                    "couleur": '/',
+                    "code": pub.code,
+                    "message": pub.message,
+                    "annonceur": pub.annonceur.Nom,
+                    "marque": marque,
+                    "produit": produit,
+                    "segment": segment,
+                    "marche": marche,
+                    "famille": famille,
+                    "secteur": secteur,
+                    "avant": programmeAvant[0].message if len(programmeAvant) > 0 else '/',
+                    'apres': programmeApres[len(programmeApres)-1].message if len(programmeApres) > 0 else '/',
+                    "ecran": pub.ecran,
+                    "afficheur": "/",
+                    "panneau": "/",
+                    "adresse": "/",
+                    "wilaya": "/",
+                    "apc": "/",
+                    'tarifbrut': ((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*tarif[0].prix/30) if tarif != '' else '/',
+                    'tarifsec': tarif[0].prix if tarif != ''else '/'
+                })
+                i += 1
+            response = sorted(response, key=lambda d: d['debut'])
+
+            # Radio
+            qs = PubliciteRadio.objects.none()
+
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "R":
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+                                            qs = qs | produit.publiciteradio_set.all()
+                                        qs = qs | marque.publiciteradio_set.filter(
+                                            produit=None)
+                                    else:
+                                        qs = qs | marque.publiciteradio_set.all()
+                                        print("marque")
+                                qs = qs | annonceur.publiciteradio_set.filter(
+                                    marque=None)
+
+                            else:
+                                qs = qs | annonceur.publiciteradio_set.all()
+                                print("annonceur")
+            print("charaf")
+
+            queryset = qs.filter(
+                confirmed=True
+            )
+            videos = PubliciteRadio.objects.none()
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'R':
+                    for contract in abonnement.contract_set.all():
+                        if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
+                            jours = JourRadio.objects.filter(date__range=(
+                                timezone.now().date() - timedelta(days=30), timezone.now().date()))
+                            videos = videos | queryset.filter(jour__in=jours)
+
+            for pub in videos:
+                tarifs = TarifRadio.objects.filter(radio=pub.jour.radio)
+                print(tarifs)
+
+                tarif = tarifs.filter(debut__lte=pub.debut, fin__gte=pub.debut)
+                print(tarif)
+
+                if(len(tarif) < 1):
+                    tarif = ""
+
+                programmeAvant = ProgrammeRadio.objects.filter(
+                    jour=pub.jour, fin__lte=pub.debut)
+                programmeApres = ProgrammeRadio.objects.filter(
+                    jour=pub.jour, debut__gte=pub.fin)
+
+                if(len(programmeAvant) < 1):
+                    programmeAvant = PubliciteRadio.objects.filter(
+                        jour=pub.jour, fin__lte=pub.debut)
+                if(len(programmeApres) < 1):
+                    programmeApres = PubliciteRadio.objects.filter(
+                        jour=pub.jour, debut__gte=pub.fin)
+
+                marque = '/'
+                produit = '/'
+                segment = '/'
+                marche = '/'
+                famille = '/'
+                secteur = '/'
+
+                if(pub.marque):
+                    marque = pub.marque.Nom
+
+                if(pub.produit):
+                    produit = pub.produit.Nom
+
+                if(pub.segment):
+                    segment = pub.segment.Nom
+
+                if(pub.marche):
+                    marche = pub.marche.Nom
+
+                if(pub.famille):
+                    famille = pub.famille.Nom
+
+                if(pub.secteur):
+                    secteur = pub.secteur.Nom
+                print("charaf")
+                response.append({
+                    "id": i,
+                    'media': 'RD',
+                    'date': pub.jour.date,
+                    'support': pub.jour.radio.nom,
+                    "debut": pub.debut,
+                    "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) if datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) >= timedelta(seconds=1) else datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) + timedelta(hours=24),
+                    "couleur": '/',
+                    "code": pub.code,
+                    "message": pub.message,
+                    "annonceur": pub.annonceur.Nom,
+                    "marque": marque,
+                    "produit": produit,
+                    "segment": segment,
+                    "marche": marche,
+                    "famille": famille,
+                    "secteur": secteur,
+                    "avant": programmeAvant[0].message if len(programmeAvant) > 0 else '/',
+                    'apres': programmeApres[len(programmeApres)-1].message if len(programmeApres) > 0 else '/',
+                    "ecran": pub.ecran,
+                    "afficheur": '/',
+                    "panneau": '/',
+                    "adresse": '/',
+                    "wilaya": '/',
+                    "apc": '/',
+                    'tarifbrut': ((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*tarif[0].prix/30) if tarif != '' else '/',
+                    'tarifsec': tarif[0].prix if tarif != ''else '/'
+                })
+                i += 1
+            response = sorted(response, key=lambda d: d['debut'])
+
+            # "# Afficheur
+            qs = Pub.objects.none()
+
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "J":
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+                                            qs = qs | produit.pub_set.all()
+                                        qs = qs | marque.pub_set.filter(
+                                            produit=None)
+                                    else:
+                                        qs = qs | marque.pub_set.all()
+                                        print("marque")
+                                qs = qs | annonceur.pub_set.filter(
+                                    marque=None)
+
+                            else:
+                                qs = qs | annonceur.pub_set.all()
+                                print("annonceur")
+
+            queryset = qs.filter(
+                confirmed=True
+            )
+            videos = Pub.objects.none()
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                    for contract in abonnement.contract_set.all():
+                        if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
+                            videos = videos | queryset.filter(date_creation__range=(
+                                timezone.now().date() - timedelta(days=30), timezone.now().date()))
+
+            for pub in videos:
+
+                tarif = ""
+
+                marque = '/'
+                produit = '/'
+                segment = '/'
+                marche = '/'
+                famille = '/'
+                secteur = '/'
+
+                if(pub.marque):
+                    marque = pub.marque.Nom
+
+                if(pub.produit):
+                    produit = pub.produit.Nom
+
+                if(pub.segment):
+                    segment = pub.segment.Nom
+
+                if(pub.marche):
+                    marche = pub.marche.Nom
+
+                if(pub.famille):
+                    famille = pub.famille.Nom
+
+                if(pub.secteur):
+                    secteur = pub.secteur.Nom
+
+                response.append({
+                    "id": i,
+                    'media': 'AF',
+                    'date': pub.date_creation,
+                    'support': '/',
+                    "debut": '/',
+                    "duree": '/',
+                    "couleur": '/',
+                    "code": pub.code,
+                    "message": pub.accroche,
+                    "annonceur": pub.annonceur.Nom,
+                    "marque": marque,
+                    "produit": produit,
+                    "segment": segment,
+                    "marche": marche,
+                    "famille": famille,
+                    "secteur": secteur,
+                    "avant": '/',
+                    'apres': '/',
+                    "ecran": '/',
+                    "afficheur": pub.panneau.afficheur.nom_afficheur,
+                    "panneau": pub.panneau.type+" "+pub.panneau.mecanisme,
+                    "adresse": pub.panneau.adresse,
+                    "wilaya": pub.panneau.apc.commune.Wilaya.nom_wilaya,
+                    "apc": pub.panneau.apc.nom_APC,
+                    "code": pub.code,
+                    'tarifbrut': pub.prix,
+                    'tarifsec': '/',
+                })
+                i += 1
+
+            # "# Article
+            # qs = Article.objects.none()
+
+            # for abonnement in self.request.user.abonnement_set.all():
+            #     if timezone.now().date() <= abonnement.date_fin and abonnement.service == "J":
+            #         for contract in abonnement.contract_set.all():
+            #             for annonceur in contract.annonceurs.all():
+            #                 if contract.marques.filter(NomAnnonceur=annonceur).exists():
+            #                     for marque in contract.marques.filter(NomAnnonceur=annonceur):
+            #                         if contract.produits.filter(NomMarque=marque).exists():
+            #                             for produit in contract.produits.filter(NomMarque=marque):
+            #                                 qs = qs | produit.article_set.all()
+            #                             qs = qs | marque.article_set.filter(
+            #                                 produit=None)
+            #                         else:
+            #                             qs = qs | marque.article_set.all()
+            #                             print("marque")
+            #                     qs = qs | annonceur.article_set.filter(
+            #                         marque=None)
+
+            #                 else:
+            #                     qs = qs | annonceur.article_set.all()
+            #                     print("annonceur")
+
+            # queryset = qs.filter(
+            #     confirmed=True
+            # )
+            # videos = Article.objects.none()
+            # for abonnement in self.request.user.abonnement_set.all():
+            #     if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+            #         for contract in abonnement.contract_set.all():
+            #             if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
+            #                 videos = videos | queryset.filter(date_creation__range=(
+            #                     timezone.now().date() - timedelta(days=30), timezone.now().date()))
+
+            # for pub in videos:
+
+            #     tarif = ""
+
+            #     marque = '-'
+            #     produit = '-'
+            #     segment = '-'
+            #     marche = '-'
+            #     famille = '-'
+            #     secteur = '-'
+
+            #     if(pub.marque):
+            #         marque = pub.marque.Nom
+
+            #     if(pub.produit):
+            #         produit = pub.produit.Nom
+
+            #     if(pub.segment):
+            #         segment = pub.segment.Nom
+
+            #     if(pub.marche):
+            #         marche = pub.marche.Nom
+
+            #     if(pub.famille):
+            #         famille = pub.famille.Nom
+
+            #     if(pub.secteur):
+            #         secteur = pub.secteur.Nom
+
+            #     response.append({
+            #         "id": i,
+            #         'media': 'Journal',
+            #         'date': pub.date_creation,
+            #         'support': pub.edition.journal.nomJournal,
+            #         "debut": "-",
+            #         "duree": "-",
+            #         "couleur": pub.couleur,
+            #         "code": "12",
+            #         "message": pub.accroche,
+            #         "annonceur": pub.annonceur.Nom,
+            #         "marque": marque,
+            #         "produit": produit,
+            #         "segment": segment,
+            #         "marche": marche,
+            #         "famille": famille,
+            #         "secteur": secteur,
+            #         "avant": pub.page_precedente,
+            #         'apres': pub.page_suivante,
+            #         "ecran": "-",
+            #         'tarifbrut': '',
+            #         'tarifsec': ''
+            #     })
+            #     i += 1
+
+            return Response(sorted(response, key=lambda d: d['media']))

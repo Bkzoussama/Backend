@@ -21,6 +21,7 @@ urlpatterns = [
     path('editions/count/', Editioncount.as_view()),
 
     path('articles', ArticleView.as_view()),
+    path('articles/post/', PostArticleView.as_view()),
     path('articles/confirmed/', ArticleConfirmed.as_view()),
     path('articles/confirmed/count/', ArticleConfirmedCount.as_view()),
     path('articles/<int:pk>/', UpdateArticleView.as_view()),
@@ -126,6 +127,7 @@ urlpatterns = [
     path('chaine/search/', Chainesearch.as_view()),
 
     path('video/', PubliciteView.as_view()),
+    path('video/post/', PostPubliciteView.as_view()),
     path('programme/', ProgrammeView.as_view()),
     path('programme/<int:pk>/', UpdateProgrammeView.as_view()),
     path('jour/', JourView.as_view()),
@@ -138,10 +140,50 @@ urlpatterns = [
     path('video/confirmed/', VideoConfirmation.as_view()),
     path('video/confirmed/count/', VideoConfirmedCount.as_view()),
     path('videoclient/<int:pk>/', PubliciteClientDetail.as_view()),
+    # RADIO >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    path('radio/', RadioView.as_view()),
+    path('radio/getall/', RadioAllView.as_view()),
+    path('radio/<int:pk>/', RadioDetail.as_view()),
+    path('radio/search/', Radiosearch.as_view()),
+
+    path('son/', PubliciteRadioView.as_view()),
+    path('son/post/', PostPubliciteRadioView.as_view()),
+    path('programmeradio/', ProgrammeRadioView.as_view()),
+    path('programmeradio/<int:pk>/', UpdateProgrammeRadioView.as_view()),
+    path('jourradio/', JourRadioView.as_view()),
+    path('jourradioclient/', JourRadioViewClient.as_view()),
+    path('jourradio/<int:pk>/', JourRadioDetail.as_view()),
+    path('tableprogrammeradio/', ProgrammeEtPubRadio.as_view()),
+    path('tableprogrammeradioclient/', RadioClientView.as_view()),
+    # path('video/search/', VideoView.as_view()),
+    path('son/<int:pk>/', PubliciteRadioDetail.as_view()),
+    path('son/confirmed/', SonConfirmation.as_view()),
+    path('son/confirmed/count/', SonConfirmedCount.as_view()),
+    path('sonclient/<int:pk>/', PubliciteRadioClientDetail.as_view()),
+
+
+
 
     path('articles/link/', ArticleLinkClient.as_view()),
     path('pub/link/', PubLinkClient.as_view()),
+    path('publicite/link/', PubliciteLinkClient.as_view()),
 
 
     path('sendemail/', send_email.as_view()),
+    path('sendemailchaine/', send_email_chaine.as_view()),
+
+
+    path('gettarifchaine/', GetTarifChaineView.as_view()),
+    path('tarifchaine/', TarifChaineView.as_view()),
+    path('tarifchaine/<int:pk>/', TarifChaineDetail.as_view()),
+
+
+    path('gettarifradio/', GetTarifRadioView.as_view()),
+    path('tarifradio/', TarifRadioView.as_view()),
+    path('tarifradio/<int:pk>/', TarifRadioDetail.as_view()),
+
+    path('pigesfinale/', PigeFinaleView.as_view()),
+
+
+
 ]

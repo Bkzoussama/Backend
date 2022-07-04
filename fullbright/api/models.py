@@ -1,4 +1,4 @@
-#test
+# test
 from itertools import chain
 from django.db import models
 import datetime
@@ -37,6 +37,15 @@ class Article(models.Model):
         'Marque', on_delete=models.CASCADE, null=True, blank=True)
     produit = models.ForeignKey(
         'Produit', on_delete=models.CASCADE, null=True, blank=True)
+    segment = models.ForeignKey(
+        'Segment', on_delete=models.CASCADE, null=True, blank=True)
+    marche = models.ForeignKey(
+        'Marche', on_delete=models.CASCADE, null=True, blank=True)
+    famille = models.ForeignKey(
+        'Famille', on_delete=models.CASCADE, null=True, blank=True)
+    secteur = models.ForeignKey(
+        'Secteur', on_delete=models.CASCADE, null=True, blank=True)
+
     image = models.ImageField(upload_to="media",  default="")
     date_creation = models.DateField()
     language = models.CharField(max_length=2, default="", choices=languages)
@@ -48,6 +57,7 @@ class Article(models.Model):
     couleur = models.CharField(
         max_length=50, default="", null=True, blank=True)
     confirmed = models.BooleanField(default=False)
+    code = models.CharField(max_length=20, default='')
 
 
 # -----------------------definition des table d'adresse : wilaya commune et Apc ---------------------------.
@@ -163,6 +173,8 @@ class Pub(models.Model):
     circulation = models.BooleanField(default=True)
     code = models.CharField(max_length=50,  null=True, blank=True)
     accroche = models.CharField(max_length=10000, default="")
+    prix = models.IntegerField(null=True, blank=True,default=0)
+
 
     def __str__(self):
         return str(self.date_creation)+"  ===>  "+str(self.id)\
@@ -179,12 +191,6 @@ class Annonceur(models.Model):
 
 
 class Segment(models.Model):
-    Nom = models.CharField(max_length=100, unique=True)
-
-    def __str__(self):
-        return str(self.id)
-
-class radio(models.Model):
     Nom = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
@@ -236,6 +242,7 @@ class Abonnement(models.Model):
         ('J', 'Journal'),
         ('P', 'Panneau'),
         ('C', 'Chaine'),
+        ('R', 'Radio'),
     ]
     Nom = models.CharField(max_length=100)
     service = models.CharField(max_length=1, default="", choices=services)
@@ -271,6 +278,14 @@ class Publicite(models.Model):
         'Marque', on_delete=models.CASCADE, null=True, blank=True)
     produit = models.ForeignKey(
         'Produit', on_delete=models.CASCADE, null=True, blank=True)
+    segment = models.ForeignKey(
+        'Segment', on_delete=models.CASCADE, null=True, blank=True)
+    marche = models.ForeignKey(
+        'Marche', on_delete=models.CASCADE, null=True, blank=True)
+    famille = models.ForeignKey(
+        'Famille', on_delete=models.CASCADE, null=True, blank=True)
+    secteur = models.ForeignKey(
+        'Secteur', on_delete=models.CASCADE, null=True, blank=True)
 
     video = models.FileField(
         upload_to="media",  default="", null=True, blank=True)
@@ -284,6 +299,7 @@ class Publicite(models.Model):
     language = models.CharField(max_length=2, default="", choices=languages)
     message = models.CharField(max_length=12000, default="")
     confirmed = models.BooleanField(default=False)
+    code = models.CharField(max_length=20, default='')
 
 
 class Programme(models.Model):
@@ -305,3 +321,79 @@ class Jour(models.Model):
 class Chaine(models.Model):
     nom = models.CharField(max_length=20, default="", unique=True)
     image = models.ImageField(upload_to="media", default="")
+
+
+class TarifChaine(models.Model):
+    chaine = models.ForeignKey('Chaine', on_delete=models.CASCADE)
+    debut = models.TimeField()
+    fin = models.TimeField(
+        default=datetime.datetime.now().strftime("%H:%M:%S"))
+    prix = models.IntegerField(null=True, blank=True)
+
+
+# ""
+class PubliciteRadio(models.Model):
+    languages = (
+        ("AR", "arabe"),
+        ("FR", "francais"),
+        ("AF", "arabe + francais"),
+
+    )
+    jour = models.ForeignKey('JourRadio', on_delete=models.CASCADE)
+    annonceur = models.ForeignKey(
+        'Annonceur', on_delete=models.CASCADE)
+    marque = models.ForeignKey(
+        'Marque', on_delete=models.CASCADE, null=True, blank=True)
+    produit = models.ForeignKey(
+        'Produit', on_delete=models.CASCADE, null=True, blank=True)
+    segment = models.ForeignKey(
+        'Segment', on_delete=models.CASCADE, null=True, blank=True)
+    marche = models.ForeignKey(
+        'Marche', on_delete=models.CASCADE, null=True, blank=True)
+    famille = models.ForeignKey(
+        'Famille', on_delete=models.CASCADE, null=True, blank=True)
+    secteur = models.ForeignKey(
+        'Secteur', on_delete=models.CASCADE, null=True, blank=True)
+
+    son = models.FileField(
+        upload_to="media",  default="", null=True, blank=True)
+    debut = models.TimeField()
+    fin = models.TimeField(
+        default=datetime.datetime.now().strftime("%H:%M:%S"))
+
+    rang = models.IntegerField(null=True, blank=True)
+    encombrement = models.IntegerField(null=True, blank=True)
+    ecran = models.IntegerField()
+    language = models.CharField(max_length=2, default="", choices=languages)
+    message = models.CharField(max_length=12000, default="")
+    confirmed = models.BooleanField(default=False)
+    code = models.CharField(max_length=20, default='')
+
+
+class ProgrammeRadio(models.Model):
+    jour = models.ForeignKey('JourRadio', on_delete=models.CASCADE)
+    message = models.CharField(max_length=1200, default="")
+    debut = models.TimeField()
+    fin = models.TimeField(
+        default=datetime.datetime.now().strftime("%H:%M:%S"))
+
+
+class JourRadio(models.Model):
+    date = models.DateField()
+    radio = models.ForeignKey('Radio', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.date)+"  ===>  "+str(self.id)
+
+
+class Radio(models.Model):
+    nom = models.CharField(max_length=20, default="", unique=True)
+    image = models.ImageField(upload_to="media", default="")
+
+
+class TarifRadio(models.Model):
+    radio = models.ForeignKey('Radio', on_delete=models.CASCADE)
+    debut = models.TimeField()
+    fin = models.TimeField(
+        default=datetime.datetime.now().strftime("%H:%M:%S"))
+    prix = models.IntegerField(null=True, blank=True)
