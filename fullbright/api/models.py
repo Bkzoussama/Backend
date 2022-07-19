@@ -173,8 +173,7 @@ class Pub(models.Model):
     circulation = models.BooleanField(default=True)
     code = models.CharField(max_length=50,  null=True, blank=True)
     accroche = models.CharField(max_length=10000, default="")
-    prix = models.IntegerField(null=True, blank=True,default=0)
-
+    prix = models.IntegerField(null=True, blank=True, default=0)
 
     def __str__(self):
         return str(self.date_creation)+"  ===>  "+str(self.id)\
@@ -331,7 +330,14 @@ class TarifChaine(models.Model):
     prix = models.IntegerField(null=True, blank=True)
 
 
+class Indice(models.Model):
+    chaine = models.ForeignKey('Chaine', on_delete=models.CASCADE)
+    duree = models.IntegerField(null=True, blank=True)
+    indice = models.IntegerField(null=True, blank=True)
+
 # ""
+
+
 class PubliciteRadio(models.Model):
     languages = (
         ("AR", "arabe"),

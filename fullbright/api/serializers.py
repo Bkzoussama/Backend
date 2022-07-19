@@ -664,6 +664,10 @@ class TarifChaineSerializer(serializers.ModelSerializer):
         model = TarifChaine
         fields = "__all__"
 
+class IndiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Indice
+        fields = "__all__"
 
 class TarifRadioSerializer(serializers.ModelSerializer):
     class Meta:

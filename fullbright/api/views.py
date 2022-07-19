@@ -32,6 +32,7 @@ from users.serializers import *
 from rest_framework import permissions
 import pandas as pd
 from datetime import date, datetime, time, timedelta
+from collections import OrderedDict
 
 
 class JournalPermissions(permissions.BasePermission):
@@ -1199,6 +1200,7 @@ class send_email(APIView):
 
         print("##########################################")
         clients = User.objects.filter(is_client=True, is_active=True)
+        jours = Jour.objects.filter(date=date.today())
         print("##########################################")
 
         for client in clients:
@@ -1221,8 +1223,66 @@ class send_email(APIView):
                                 qs = qs | annonceur.article_set.filter(
                                     date_creation=date.today())
 
+            qsVid = Publicite.objects.none()
+            for abonnement in client.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+                                            qsVid = qsVid | produit.publicite_set.filter(
+                                                jour__in=jours)
+                                    else:
+                                        qsVid = qsVid | marque.publicite_set.filter(
+                                            jour__in=jours)
+                            else:
+                                qsVid = qsVid | annonceur.publicite_set.filter(
+                                    jour__in=jours)
+
+            list_dic = []
+
+            for article in qs:
+                acc = ""
+                if len(article.accroche) > 70:
+                    acc = article.accroche[:70]+" ..."
+                else:
+                    acc = article.accroche
+
+                list_dic.append({
+                    "media": "Journal",
+                    "support": article.edition.journal.nomJournal,
+                    "accroche": acc,
+                    "date": article.date_creation,
+                    "annonceur": article.annonceur.Nom,
+                    "marque": article.marque.Nom if article.marque else '/',
+                    "produit": article.produit.Nom if article.produit else '/',
+                    "lien": "http://client.promediaconseils.com/article/link/"+str(article.id)
+                })
+
+            for article in qsVid:
+                acc = ""
+                if len(article.message) > 70:
+                    acc = article.message[:70]+" ..."
+                else:
+                    acc = article.message
+
+                list_dic.append({
+                    "media": "TV",
+                    "support": article.jour.chaine.nom,
+                    "accroche": acc,
+                    "date": article.jour.date,
+                    "annonceur": article.annonceur.Nom,
+                    "marque": article.marque.Nom if article.marque else '/',
+                    "produit": article.produit.Nom if article.produit else '/',
+                    "lien": "http://client.promediaconseils.com/pub/link/"+str(article.id)
+                })
+
             print(qs)
             print(client.email)
+            list_dic = sorted(list_dic, key=lambda x: x['annonceur'])
+            print(list_dic)
             print("##########################################")
 
             emailm = """
@@ -1243,7 +1303,8 @@ class send_email(APIView):
 			color: #ffffff;
 			text-align: left;
 			font-weight: bold;">
-				<th style="padding: 12px 15px;">Journal</th>
+				<th style="padding: 12px 15px;">Media</th>
+				<th style="padding: 12px 15px;">Support</th>
 				<th style="padding: 12px 15px;">Accroche</th>
 				<th style="padding: 12px 15px;">Date</th>
 				<th style="padding: 12px 15px;">Annonceur</th>
@@ -1256,14 +1317,12 @@ class send_email(APIView):
 
 
         """
-            for article in qs:
-                acc = ""
-                if len(article.accroche) > 70:
-                    acc = article.accroche[:70]+" ..."
-                else:
-                    acc = article.accroche
+
+            for item in list_dic:
+
                 emailm = emailm+"""
                 <tr style="border-bottom: 1px solid #dddddd;color="black">
+                    <td style="padding: 12px 15px;">{}</td>
                     <td style="padding: 12px 15px;">{}</td>
                     <td>
                         <div style="
@@ -1300,7 +1359,7 @@ class send_email(APIView):
 
                 </tr>
 
-                """.format(article.edition.journal.nomJournal, acc, article.date_creation, article.annonceur.Nom, article.marque.Nom if article.marque else '', article.produit.Nom if article.produit else '', "http://client.promediaconseils.com/article/link/"+str(article.id))
+                """.format(item["media"], item["support"], item["accroche"], item["date"], item["annonceur"], item["marque"], item["produit"], item["lien"])
 
             emailm = emailm + """</tbody>
                                     </table>
@@ -1308,7 +1367,8 @@ class send_email(APIView):
 
             if len(qs) != 0:
                 email = EmailMessage(
-                    'A new mail from ProMediaConseils!', emailm, to=[client.email])
+                    # 'A new mail from ProMediaConseils!', emailm, to=[client.email])
+                    'A new mail from ProMediaConseils!', emailm, to=["ghecharaf@gmail.com"])
                 email.content_subtype = "html"
                 email.send()
         return Response("ok")
@@ -1711,7 +1771,7 @@ class SonConfirmation(generics.ListCreateAPIView):
 
 
 class RadioView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
     queryset = Radio.objects.all().order_by("nom")
     serializer_class = RadioSerializer
     pagination_class = MyPagination
@@ -1723,14 +1783,14 @@ class RadioAllView(generics.ListAPIView):
 
 
 class RadioDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
     queryset = Radio.objects.all()
     serializer_class = RadioSerializer
     lookup_fields = ['pk']
 
 
 class Radiosearch(generics.ListAPIView):
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
     serializer_class = RadioSerializer
 
     def get_queryset(self):
@@ -1745,11 +1805,11 @@ class Radiosearch(generics.ListAPIView):
 class PubliciteRadioView(generics.ListCreateAPIView):
     serializer_class = PubliciteRadioSerializer
     queryset = PubliciteRadio.objects.all()
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
 
 
 class PostPubliciteRadioView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
     serializer_class = PubliciteRadioSerializer
 
     def post(self, request, format=None):
@@ -1771,7 +1831,7 @@ class PostPubliciteRadioView(generics.ListCreateAPIView):
 
 
 class PubliciteRadioDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
     queryset = PubliciteRadio.objects.all()
     serializer_class = PubliciteRadioSerializer
     lookup_fields = ['pk']
@@ -1787,17 +1847,17 @@ class PubliciteRadioClientDetail(generics.RetrieveUpdateDestroyAPIView):
 class ProgrammeRadioView(generics.ListCreateAPIView):
     serializer_class = ProgrammeRadioSerializer
     queryset = ProgrammeRadio.objects.all()
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
 
 
 class UpdateProgrammeRadioView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProgrammeRadio.objects.all()
     serializer_class = ProgrammeRadioSerializer
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
 
 
 class JourRadioDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
     queryset = JourRadio.objects.all()
     serializer_class = JourRadio
     lookup_fields = ['pk']
@@ -1805,7 +1865,7 @@ class JourRadioDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class JourRadioView(generics.ListCreateAPIView):
     serializer_class = JourRadioSerializer
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
 
     def get_queryset(self):
         id = self.request.query_params.get('id')
@@ -1823,7 +1883,7 @@ class JourRadioViewClient(generics.ListAPIView):
 
 
 class ProgrammeEtPubRadio(APIView):
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
 
     def get(self, request):
         id = self.request.query_params.get('id')
@@ -1965,14 +2025,27 @@ class GetTarifChaineView(generics.ListCreateAPIView):
         return queryset
 
 
-class TarifRadioView(generics.ListCreateAPIView):
+class IndiceView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = Indice.objects.all()
+    serializer_class = IndiceSerializer
+
+
+class IndiceDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = Indice.objects.all()
+    serializer_class = IndiceSerializer
+    lookup_fields = ['pk']
+
+
+class TarifRadioView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & RadioPermissions]
     queryset = TarifRadio.objects.all()
     serializer_class = TarifRadioSerializer
 
 
 class TarifRadioDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
     queryset = TarifRadio.objects.all()
     serializer_class = TarifRadioSerializer
     lookup_fields = ['pk']
@@ -1980,7 +2053,7 @@ class TarifRadioDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class GetTarifRadioView(generics.ListCreateAPIView):
     serializer_class = TarifRadioSerializer
-    permission_classes = [IsAuthenticated & ChainePermissions]
+    permission_classes = [IsAuthenticated & RadioPermissions]
 
     def get_queryset(self):
         id = self.request.query_params.get('id')
@@ -2036,9 +2109,20 @@ class PigeFinaleView(generics.ListAPIView):
             i = 0
             for pub in videos:
                 tarifs = TarifChaine.objects.filter(chaine=pub.jour.chaine)
-                print(tarifs)
+                indices = Indice.objects.filter(
+                    chaine=pub.jour.chaine).order_by("-indice")
+                print(indices)
 
                 tarif = tarifs.filter(debut__lte=pub.debut, fin__gte=pub.debut)
+
+                duree = datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) if datetime.combine(date.today(), pub.fin) - datetime.combine(
+                    date.today(), pub.debut) >= timedelta(seconds=1) else datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) + timedelta(hours=24)
+                indice = indices.filter(duree__lte=duree.total_seconds())
+                ind = 1
+                print(indice, duree.total_seconds())
+                if len(indice) > 0:
+                    ind = indice[len(indice)-1].indice/100
+                print("indice ", ind)
                 print(tarif)
 
                 if(len(tarif) < 1):
@@ -2087,7 +2171,7 @@ class PigeFinaleView(generics.ListAPIView):
                     'date': pub.jour.date,
                     'support': pub.jour.chaine.nom,
                     "debut": pub.debut,
-                    "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) if datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) >= timedelta(seconds=1) else datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) + timedelta(hours=24),
+                    "duree": duree,
                     "couleur": '/',
                     "code": pub.code,
                     "message": pub.message,
@@ -2106,11 +2190,13 @@ class PigeFinaleView(generics.ListAPIView):
                     "adresse": "/",
                     "wilaya": "/",
                     "apc": "/",
-                    'tarifbrut': ((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*tarif[0].prix/30) if tarif != '' else '/',
+                    'tarifbrut': (((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*(tarif[0].prix*ind))/30) if tarif != '' else '/',
                     'tarifsec': tarif[0].prix if tarif != ''else '/'
                 })
                 i += 1
             response = sorted(response, key=lambda d: d['debut'])
+
+            print(response)
 
             # Radio
             qs = PubliciteRadio.objects.none()

@@ -177,6 +177,8 @@ urlpatterns = [
     path('tarifchaine/', TarifChaineView.as_view()),
     path('tarifchaine/<int:pk>/', TarifChaineDetail.as_view()),
 
+    path('indice/', IndiceView.as_view()),
+    path('indice/<int:pk>/', IndiceDetail.as_view()),
 
     path('gettarifradio/', GetTarifRadioView.as_view()),
     path('tarifradio/', TarifRadioView.as_view()),
