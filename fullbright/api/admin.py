@@ -26,6 +26,8 @@ admin.site.register(Publicite)
 admin.site.register(Chaine)
 admin.site.register(Programme)
 admin.site.register(Jour)
+admin.site.register(Indice)
+
 
 #########################
 admin.site.register(PubliciteRadio)
