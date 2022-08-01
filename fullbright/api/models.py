@@ -45,7 +45,6 @@ class Article(models.Model):
         'Famille', on_delete=models.CASCADE, null=True, blank=True)
     secteur = models.ForeignKey(
         'Secteur', on_delete=models.CASCADE, null=True, blank=True)
-    type = models.CharField(max_length=10000, default="")
 
     image = models.ImageField(upload_to="media",  default="")
     date_creation = models.DateField()
