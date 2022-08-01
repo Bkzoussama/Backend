@@ -149,7 +149,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'code', 'date_creation', "language", "edition", "accroche", "couleur", "num_page",
+        fields = ['id', 'code', 'date_creation', "type", "language", "edition", "accroche", "couleur", "num_page",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", 'segment', 'marche', 'famille', 'secteur', "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'confirmed', 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
@@ -664,10 +664,12 @@ class TarifChaineSerializer(serializers.ModelSerializer):
         model = TarifChaine
         fields = "__all__"
 
+
 class IndiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Indice
         fields = "__all__"
+
 
 class TarifRadioSerializer(serializers.ModelSerializer):
     class Meta:

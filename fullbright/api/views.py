@@ -1505,6 +1505,43 @@ class PubliciteView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
 
 
+class RecherchePublicite(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PubliciteSerializer
+
+    def get_queryset(self):
+        type = self.request.query_params.get('type')
+        msg = self.request.query_params.get('message')
+
+        print(type, msg)
+
+        msgs = []
+        result = []
+
+        if type == '0':
+            print("type 0")
+            queryset = Publicite.objects.all()
+
+            for item in queryset:
+                if item.message not in msgs:
+                    msgs.append(item.message)
+                    result.append(item)
+
+        if type == '1':
+            queryset = Publicite.objects.filter(message__icontains=msg)
+
+            for item in queryset:
+                if item.message not in msgs:
+                    result.append(item)
+                    msgs.append(item.message)
+
+        if type == 2:
+            result = Publicite.objects.filter(message__icontains=msg)
+
+        print(result)
+        return result
+
+
 class PostPubliciteView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
     serializer_class = PubliciteSerializer
@@ -1520,6 +1557,91 @@ class PostPubliciteView(generics.ListCreateAPIView):
             "{0:0=3d}".format(count+1) + "-" + data['language']
         data['code'] = code
         data['confirmed'] = False
+        serializer = PubliciteSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PostPubliciteExisteView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    serializer_class = PubliciteSerializer
+
+    def post(self, request, format=None):
+        id = request.data['id']
+        jour = request.data['jour']
+        data = request.data
+        video = Publicite.objects.filter(id=id)[0]
+        jours = Jour.objects.filter(date=date.today())
+
+        code = ""
+
+        count = Publicite.objects.filter(
+            jour__in=jours).values_list('code', flat=True).distinct().count()
+        code = date.today().strftime("%d%m%Y") + "-" + "TV" + "-" + \
+            "{0:0=3d}".format(count+1) + "-" + video.language
+
+        _mutable = data._mutable
+
+        # set to mutable
+        data._mutable = True
+
+        data['code'] = code
+        data['jour'] = jour
+        data['confirmed'] = False
+
+        publicite = Publicite.objects.filter(jour=jour)
+        programme = Programme.objects.filter(jour=jour)
+
+        response = []
+        i = 0
+        for prog in programme:
+            response.append({
+                "annonceur": "-",
+                "id": i,
+                "message": prog.message,
+                "debut": prog.debut,
+                "duree": datetime.combine(date.today(), prog.fin) - datetime.combine(date.today(), prog.debut),
+                "fin": prog.fin,
+                "type": 1,
+                "lien": prog.id,
+                "ecran": "-"
+            })
+            i += 1
+        for pub in publicite:
+            response.append({
+                "annonceur": pub.annonceur.Nom,
+                "id": i,
+                "message": pub.message,
+                "debut": pub.debut,
+                "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut),
+
+                "fin": pub.fin,
+                "type": 2,
+                "lien": pub.id,
+                "ecran": pub.ecran
+            })
+            i += 1
+        response = sorted(response, key=lambda d: d['debut'])
+
+        data['debut'] = response[len(response)-1]['fin']
+        data['fin'] = datetime.combine(date.today(
+        ), data['debut']) + response[len(response)-1]['duree']
+
+        data['fin'] = data['fin'].strftime("%H:%M:%S")
+        print(data['debut'])
+
+        print(data['fin'])
+
+        picture_copy = ContentFile(video.video.read())
+        picture_copy.name = video.video.name + \
+            datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+        data['video'] = picture_copy
+
+        data._mutable = _mutable
+
         serializer = PubliciteSerializer(data=data)
         if serializer.is_valid():
             serializer.save()

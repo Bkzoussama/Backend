@@ -126,8 +126,12 @@ urlpatterns = [
     path('chaine/<int:pk>/', ChaineDetail.as_view()),
     path('chaine/search/', Chainesearch.as_view()),
 
+    path('video/recherche/', RecherchePublicite.as_view()),
+
+
     path('video/', PubliciteView.as_view()),
     path('video/post/', PostPubliciteView.as_view()),
+    path('video/post/existe/', PostPubliciteExisteView.as_view()),
     path('programme/', ProgrammeView.as_view()),
     path('programme/<int:pk>/', UpdateProgrammeView.as_view()),
     path('jour/', JourView.as_view()),
