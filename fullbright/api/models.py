@@ -46,6 +46,8 @@ class Article(models.Model):
     secteur = models.ForeignKey(
         'Secteur', on_delete=models.CASCADE, null=True, blank=True)
 
+    type = models.BooleanField(default=False)
+
     image = models.ImageField(upload_to="media",  default="")
     date_creation = models.DateField()
     language = models.CharField(max_length=2, default="", choices=languages)

@@ -932,6 +932,15 @@ class ArticleClientView(generics.ListAPIView):
         edition = self.request.query_params.get('edition')
         start = self.request.query_params.get('start')
         end = self.request.query_params.get('end')
+        type = self.request.query_params.get('type')
+
+        print(type)
+        if(type == "true"):
+            type = True
+        else:
+            type = False
+
+        print(type)
 
         print(edition)
 
@@ -956,11 +965,20 @@ class ArticleClientView(generics.ListAPIView):
                             else:
                                 qs = qs | annonceur.article_set.all()
 
-            queryset = qs.filter(
-                accroche__icontains=accroche,
-                language__icontains=langue,
-                confirmed=True
-            )
+            if(type):
+
+                queryset = qs.filter(
+                    type=type,
+                    accroche__icontains=accroche,
+                    language__icontains=langue,
+                    confirmed=True
+                )
+            else:
+                queryset = qs.filter(
+                    accroche__icontains=accroche,
+                    language__icontains=langue,
+                    confirmed=True
+                )
             if(annonceur1):
                 queryset = queryset.filter(
                     annonceur=annonceur1
