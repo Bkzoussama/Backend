@@ -1591,6 +1591,8 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
         jour = request.data['jour']
         data = request.data
         video = Publicite.objects.filter(id=id)[0]
+        print(video.fin, video.debut)
+
         jours = Jour.objects.filter(date=date.today())
 
         code = ""
@@ -1644,8 +1646,12 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
         response = sorted(response, key=lambda d: d['debut'])
 
         data['debut'] = response[len(response)-1]['fin']
-        data['fin'] = datetime.combine(date.today(
-        ), data['debut']) + response[len(response)-1]['duree']
+
+        x = datetime.combine(date.min, video.fin) - \
+            datetime.combine(date.min, video.debut)
+
+        data['fin'] = datetime.combine(
+            date.min, data['debut']) + timedelta(seconds=x.seconds)
 
         data['fin'] = data['fin'].strftime("%H:%M:%S")
         print(data['debut'])
