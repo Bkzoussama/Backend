@@ -1646,12 +1646,15 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
         response = sorted(response, key=lambda d: d['debut'])
 
         data['debut'] = response[len(response)-1]['fin']
+        data['debut'] = datetime.combine(
+            date.min, data['debut']) + timedelta(seconds=1)
+        data['debut'] = data['debut'].strftime("%H:%M:%S")
 
         x = datetime.combine(date.min, video.fin) - \
             datetime.combine(date.min, video.debut)
 
         data['fin'] = datetime.combine(
-            date.min, data['debut']) + timedelta(seconds=x.seconds)
+            date.min, response[len(response)-1]['fin']) + timedelta(seconds=x.seconds+1)
 
         data['fin'] = data['fin'].strftime("%H:%M:%S")
         print(data['debut'])
