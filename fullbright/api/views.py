@@ -1575,6 +1575,9 @@ class PostPubliciteView(generics.ListCreateAPIView):
             "{0:0=3d}".format(count+1) + "-" + data['language']
         data['code'] = code
         data['confirmed'] = False
+        if len(data['video'].name) >= 100:
+            data['video'].name = data['video'].name[:99]
+
         serializer = PubliciteSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -1662,8 +1665,13 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
         print(data['fin'])
 
         picture_copy = ContentFile(video.video.read())
-        picture_copy.name = video.video.name + \
+
+        newname = video.video.name + \
             datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        if len(newname) >= 100:
+            picture_copy.name = newname[:99]
+        else:
+            picture_copy.name = newname
 
         data['video'] = picture_copy
 
@@ -1705,7 +1713,7 @@ class UpdateProgrammeView(generics.RetrieveUpdateDestroyAPIView):
 class JourDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
     queryset = Jour.objects.all()
-    serializer_class = PubliciteSerializer
+    serializer_class = JourSerializer
     lookup_fields = ['pk']
 
 
