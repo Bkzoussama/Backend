@@ -289,7 +289,7 @@ class Publicite(models.Model):
         'Secteur', on_delete=models.CASCADE, null=True, blank=True)
 
     video = models.FileField(
-        upload_to="media",  default="", null=True, blank=True)
+        upload_to="media",  default="", null=True, blank=True, max_length=500)
     debut = models.TimeField()
     fin = models.TimeField(
         default=datetime.datetime.now().strftime("%H:%M:%S"))
