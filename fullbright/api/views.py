@@ -110,6 +110,7 @@ class JournalViewTest(generics.ListCreateAPIView):
 class JournalView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & JournalPermissions]
     pagination_class = MyPagination
+
     queryset = Journal.objects.all()
     serializer_class = JournalSerializer
 
@@ -1669,7 +1670,7 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
         newname = video.video.name + \
             datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         if len(newname) >= 100:
-            picture_copy.name = newname[:99]
+            picture_copy.name = newname[:100]
         else:
             picture_copy.name = newname
 

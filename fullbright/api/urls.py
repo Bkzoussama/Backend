@@ -6,7 +6,11 @@ from .views import *
 
 urlpatterns = [
     path('journaux/<int:pk>', UpdateJournalView.as_view()),
+
+
     path('journaux', JournalView.as_view()),
+
+
     path('journaux/search/', Journalsearch.as_view()),
     path('journaux/test/', JournalViewTest.as_view()),
 
