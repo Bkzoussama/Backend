@@ -1524,6 +1524,39 @@ class PubliciteView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
 
 
+class GetMessagesView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PubliciteSerializer
+
+    def get_queryset(self):
+        type = self.request.query_params.get('type')
+        msg = self.request.query_params.get('message')
+
+        print(type, msg)
+
+        msgs = []
+        result = []
+
+        if type == '0':
+            print("type 0")
+            queryset = Publicite.objects.all()
+
+            for item in queryset:
+                if item.message not in msgs:
+                    msgs.append(item.message)
+                    result.append(item)
+
+        if type == '1':
+            queryset = Publicite.objects.filter(message__icontains=msg)
+
+            for item in queryset:
+                if item.message not in msgs:
+                    result.append(item)
+                    msgs.append(item.message)
+
+        return result
+
+
 class RecherchePublicite(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PubliciteSerializer
@@ -1575,7 +1608,7 @@ class PostPubliciteView(generics.ListCreateAPIView):
         code = date.today().strftime("%d%m%Y") + "-" + "TV" + "-" + \
             "{0:0=3d}".format(count+1) + "-" + data['language']
         data['code'] = code
-        data['confirmed'] = False
+        data['confirmed'] = True
         if len(data['video'].name) >= 100:
             data['video'].name = data['video'].name[:50]
 
@@ -1613,7 +1646,7 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
 
         data['code'] = code
         data['jour'] = jour
-        data['confirmed'] = False
+        data['confirmed'] = True
 
         publicite = Publicite.objects.filter(jour=jour)
         programme = Programme.objects.filter(jour=jour)
@@ -1685,6 +1718,51 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# class ModifierTempView(generics.ListAPIView):
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = PubliciteSerializer
+
+#     def get_queryset(self):
+#         type = self.request.query_params.get('type')
+#         id = self.request.query_params.get('id')
+
+#         print(id)
+
+#         if type == '0':
+#             print("type 0")
+#             queryset = Publicite.objects.filter(id=int(id))
+#             print(queryset[0].fin)
+#             x = datetime.combine(
+#                 date.min, queryset[0].fin) + timedelta(seconds=1)
+#             print(x)
+#             data = {
+#                 "fin": x.strftime("%H:%M:%S")
+#             }
+#             serializer = PubliciteSerializer(queryset, data=data)
+#             if serializer.is_valid():
+#                 serializer.save()
+#             print(serializer)
+#             queryset = Publicite.objects.filter(id=int(id))
+#             print(queryset[0].fin)
+
+#         if type == '1':
+#             queryset = Publicite.objects.filter(id=int(id))
+#             print(queryset[0].fin)
+#             x = datetime.combine(
+#                 date.min, queryset[0].fin) - timedelta(seconds=1)
+#             queryset[0].fin = x.strftime("%H:%M:%S")
+#             print(queryset[0].fin)
+#             serializer = PubliciteSerializer(data=queryset)
+#             if serializer.is_valid():
+#                 serializer.save()
+
+class ModifierTempView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated & ChainePermissions]
+    queryset = Publicite.objects.all()
+    serializer_class = PubliciteSerializer
+    lookup_fields = ['pk']
+
+
 class PubliciteDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
     queryset = Publicite.objects.all()
@@ -1748,6 +1826,7 @@ class ProgrammeEtPub(APIView):
         i = 0
         for prog in programme:
             response.append({
+                "idd": prog.id,
                 "annonceur": "-",
                 "id": i,
                 "message": prog.message,
@@ -1761,6 +1840,7 @@ class ProgrammeEtPub(APIView):
             i += 1
         for pub in publicite:
             response.append({
+                "idd": pub.id,
                 "annonceur": pub.annonceur.Nom,
                 "id": i,
                 "message": pub.message,

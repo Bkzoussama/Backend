@@ -136,6 +136,9 @@ urlpatterns = [
     path('video/', PubliciteView.as_view()),
     path('video/post/', PostPubliciteView.as_view()),
     path('video/post/existe/', PostPubliciteExisteView.as_view()),
+    path('video/messages/', GetMessagesView.as_view()),
+    path('video/temp/<int:pk>/', ModifierTempView.as_view()),
+
     path('programme/', ProgrammeView.as_view()),
     path('programme/<int:pk>/', UpdateProgrammeView.as_view()),
     path('jour/', JourView.as_view()),
