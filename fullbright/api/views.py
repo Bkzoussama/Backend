@@ -1577,7 +1577,7 @@ class PostPubliciteView(generics.ListCreateAPIView):
         data['code'] = code
         data['confirmed'] = False
         if len(data['video'].name) >= 100:
-            data['video'].name = data['video'].name[:99]
+            data['video'].name = data['video'].name[:100]
 
         serializer = PubliciteSerializer(data=data)
         if serializer.is_valid():
@@ -1669,8 +1669,10 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
 
         newname = video.video.name + \
             datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        
-        picture_copy.name = newname
+        if len(newname) >= 100:
+            picture_copy.name = newname[:100]
+        else:
+            picture_copy.name = newname
 
         data['video'] = picture_copy
 
