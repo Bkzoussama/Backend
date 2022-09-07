@@ -1694,13 +1694,10 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
             date.min, response[len(response)-1]['fin']) + timedelta(seconds=x.seconds+1)
 
         data['fin'] = data['fin'].strftime("%H:%M:%S")
-        print(data['debut'])
-
-        print(data['fin'])
 
         picture_copy = ContentFile(video.video.read())
-
-        newname = video.video.name + \
+        print(video.video.name[:50])
+        newname = video.video.name[:50] + \
             datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         if len(newname) >= 100:
             picture_copy.name = newname[:100]
