@@ -935,15 +935,10 @@ class ArticleClientView(generics.ListAPIView):
         end = self.request.query_params.get('end')
         type = self.request.query_params.get('type')
 
-        print(type)
         if(type == "true"):
             type = True
         else:
             type = False
-
-        print(type)
-
-        print(edition)
 
         if self.request.user.is_client == True:
             qs = Article.objects.none()
@@ -1001,7 +996,7 @@ class ArticleClientView(generics.ListAPIView):
                             start, '%Y-%m-%d'), datetime.strptime(end, '%Y-%m-%d'))).filter(
                             date_creation__range=(contract.date_debut, contract.date_fin))
             articles = articles.filter(edition=edition)
-            print(articles)
+
             return articles
 
 
@@ -1057,7 +1052,6 @@ class PubClientView(generics.ListAPIView):
                     produit=produit1
                 )
 
-            print("######################################################")
             pubs = Pub.objects.none()
             for abonnement in self.request.user.abonnement_set.all():
                 if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'P':
@@ -1217,10 +1211,8 @@ class send_email(APIView):
 
     def post(self, request, format=None):
 
-        print("##########################################")
         clients = User.objects.filter(is_client=True, is_active=True)
         jours = Jour.objects.filter(date=date.today())
-        print("##########################################")
 
         for client in clients:
 
@@ -1298,11 +1290,7 @@ class send_email(APIView):
                     "lien": "http://client.promediaconseils.com/pub/link/"+str(article.id)
                 })
 
-            print(qs)
-            print(client.email)
             list_dic = sorted(list_dic, key=lambda x: x['annonceur'])
-            print(list_dic)
-            print("##########################################")
 
             emailm = """
         <!DOCTYPE html>
@@ -1399,11 +1387,8 @@ class send_email_chaine(APIView):
 
     def post(self, request, format=None):
 
-        print("##########################################")
         clients = User.objects.filter(is_client=True, is_active=True)
         jours = Jour.objects.filter(date=date.today())
-        print(jours)
-        print("##########################################")
 
         for client in clients:
 
@@ -1424,10 +1409,6 @@ class send_email_chaine(APIView):
                             else:
                                 qs = qs | annonceur.publicite_set.filter(
                                     jour__in=jours)
-
-            print(qs)
-            print(client.email)
-            print("##########################################")
 
             emailm = """
         <!DOCTYPE html>
@@ -1532,13 +1513,11 @@ class GetMessagesView(generics.ListAPIView):
         type = self.request.query_params.get('type')
         msg = self.request.query_params.get('message')
 
-        print(type, msg)
-
         msgs = []
         result = []
 
         if type == '0':
-            print("type 0")
+
             queryset = Publicite.objects.all()
 
             for item in queryset:
@@ -1565,13 +1544,11 @@ class RecherchePublicite(generics.ListAPIView):
         type = self.request.query_params.get('type')
         msg = self.request.query_params.get('message')
 
-        print(type, msg)
-
         msgs = []
         result = []
 
         if type == '0':
-            print("type 0")
+
             queryset = Publicite.objects.all()
 
             for item in queryset:
@@ -1590,7 +1567,6 @@ class RecherchePublicite(generics.ListAPIView):
         if type == 2:
             result = Publicite.objects.filter(message__icontains=msg)
 
-        print(result)
         return result
 
 
@@ -1628,7 +1604,6 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
         jour = request.data['jour']
         data = request.data
         video = Publicite.objects.filter(id=id)[0]
-        print(video.fin, video.debut)
 
         jours = Jour.objects.filter(date=date.today())
 
@@ -1696,7 +1671,6 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
         data['fin'] = data['fin'].strftime("%H:%M:%S")
 
         picture_copy = ContentFile(video.video.read())
-        print(video.video.name[:50])
         newname = video.video.name[:50] + \
             datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         if len(newname) >= 100:
@@ -1714,44 +1688,6 @@ class PostPubliciteExisteView(generics.ListCreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# class ModifierTempView(generics.ListAPIView):
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = PubliciteSerializer
-
-#     def get_queryset(self):
-#         type = self.request.query_params.get('type')
-#         id = self.request.query_params.get('id')
-
-#         print(id)
-
-#         if type == '0':
-#             print("type 0")
-#             queryset = Publicite.objects.filter(id=int(id))
-#             print(queryset[0].fin)
-#             x = datetime.combine(
-#                 date.min, queryset[0].fin) + timedelta(seconds=1)
-#             print(x)
-#             data = {
-#                 "fin": x.strftime("%H:%M:%S")
-#             }
-#             serializer = PubliciteSerializer(queryset, data=data)
-#             if serializer.is_valid():
-#                 serializer.save()
-#             print(serializer)
-#             queryset = Publicite.objects.filter(id=int(id))
-#             print(queryset[0].fin)
-
-#         if type == '1':
-#             queryset = Publicite.objects.filter(id=int(id))
-#             print(queryset[0].fin)
-#             x = datetime.combine(
-#                 date.min, queryset[0].fin) - timedelta(seconds=1)
-#             queryset[0].fin = x.strftime("%H:%M:%S")
-#             print(queryset[0].fin)
-#             serializer = PubliciteSerializer(data=queryset)
-#             if serializer.is_valid():
-#                 serializer.save()
 
 class ModifierTempView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated & ChainePermissions]
@@ -1871,21 +1807,18 @@ class ChaneiClientView(generics.ListAPIView):
                                 for marque in contract.marques.filter(NomAnnonceur=annonceur):
                                     if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
-                                            print(produit.publicite_set.all())
+
                                             qs = qs | produit.publicite_set.all()
                                         qs = qs | marque.publicite_set.filter(
                                             produit=None)
                                     else:
                                         qs = qs | marque.publicite_set.all()
-                                        print("marque")
                                 qs = qs | annonceur.publicite_set.filter(
                                     marque=None)
 
                             else:
                                 qs = qs | annonceur.publicite_set.all()
-                                print("annonceur")
 
-            print(qs)
             queryset = qs.filter(
                 confirmed=True
             )
@@ -1946,7 +1879,7 @@ class PubViewTest(APIView):
             code = date.today().strftime("%d%m%Y") + "-" + "AF" + "-" + \
                 "{0:0=3d}".format(count+1) + "-" + data['langue']
             data['code'] = code
-            data['confirmed'] = False
+            data['confirmed'] = True
             serializer = PubSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -1957,14 +1890,14 @@ class PubViewTest(APIView):
 
             # set to mutable
             data._mutable = True
-            data['confirmed'] = False
+            data['confirmed'] = True
             obj = Pub.objects.filter(code=data['code'])[0]
 
             if obj.image:
                 picture_copy = ContentFile(obj.image.read())
                 picture_copy.name = obj.image.name + datetime.now().strftime("%d/%m/%Y-%H:%M:%S") + \
                     '.'+obj.image.name.split('.')[-1]
-                print(picture_copy.name)
+
                 data['image'] = picture_copy
             else:
                 picture_copy = ContentFile(obj.video.read())
@@ -1974,8 +1907,7 @@ class PubViewTest(APIView):
             data['date_creation'] = obj.date_creation
 
             data._mutable = _mutable
-            print("#"*30)
-            print(data)
+
             serializer = PubSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -2174,22 +2106,19 @@ class RadioClientView(generics.ListAPIView):
                                 for marque in contract.marques.filter(NomAnnonceur=annonceur):
                                     if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
-                                            print(
-                                                produit.publiciteradio_set.all())
+
                                             qs = qs | produit.publiciteradio_set.all()
                                         qs = qs | marque.publiciteradio_set.filter(
                                             produit=None)
                                     else:
                                         qs = qs | marque.publiciteradio_set.all()
-                                        print("marque")
+
                                 qs = qs | annonceur.publiciteradio_set.filter(
                                     marque=None)
 
                             else:
                                 qs = qs | annonceur.publiciteradio_set.all()
-                                print("annonceur")
 
-            print(qs)
             queryset = qs.filter(
                 confirmed=True
             )
@@ -2313,21 +2242,19 @@ class PigeFinaleView(generics.ListAPIView):
                                 for marque in contract.marques.filter(NomAnnonceur=annonceur):
                                     if contract.produits.filter(NomMarque=marque).exists():
                                         for produit in contract.produits.filter(NomMarque=marque):
-                                            print(produit.publicite_set.all())
+
                                             qs = qs | produit.publicite_set.all()
                                         qs = qs | marque.publicite_set.filter(
                                             produit=None)
                                     else:
                                         qs = qs | marque.publicite_set.all()
-                                        print("marque")
+
                                 qs = qs | annonceur.publicite_set.filter(
                                     marque=None)
 
                             else:
                                 qs = qs | annonceur.publicite_set.all()
-                                print("annonceur")
 
-            print(qs)
             queryset = qs.filter(
                 confirmed=True
             )
@@ -2346,7 +2273,6 @@ class PigeFinaleView(generics.ListAPIView):
                 tarifs = TarifChaine.objects.filter(chaine=pub.jour.chaine)
                 indices = Indice.objects.filter(
                     chaine=pub.jour.chaine).order_by("-indice")
-                print(indices)
 
                 tarif = tarifs.filter(debut__lte=pub.debut, fin__gte=pub.debut)
 
@@ -2354,11 +2280,9 @@ class PigeFinaleView(generics.ListAPIView):
                     date.today(), pub.debut) >= timedelta(seconds=1) else datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) + timedelta(hours=24)
                 indice = indices.filter(duree__lte=duree.total_seconds())
                 ind = 1
-                print(indice, duree.total_seconds())
+
                 if len(indice) > 0:
                     ind = indice[len(indice)-1].indice/100
-                print("indice ", ind)
-                print(tarif)
 
                 if(len(tarif) < 1):
                     tarif = ""
@@ -2431,8 +2355,6 @@ class PigeFinaleView(generics.ListAPIView):
                 i += 1
             response = sorted(response, key=lambda d: d['debut'])
 
-            print(response)
-
             # Radio
             qs = PubliciteRadio.objects.none()
 
@@ -2449,14 +2371,12 @@ class PigeFinaleView(generics.ListAPIView):
                                             produit=None)
                                     else:
                                         qs = qs | marque.publiciteradio_set.all()
-                                        print("marque")
+
                                 qs = qs | annonceur.publiciteradio_set.filter(
                                     marque=None)
 
                             else:
                                 qs = qs | annonceur.publiciteradio_set.all()
-                                print("annonceur")
-            print("charaf")
 
             queryset = qs.filter(
                 confirmed=True
@@ -2472,10 +2392,8 @@ class PigeFinaleView(generics.ListAPIView):
 
             for pub in videos:
                 tarifs = TarifRadio.objects.filter(radio=pub.jour.radio)
-                print(tarifs)
 
                 tarif = tarifs.filter(debut__lte=pub.debut, fin__gte=pub.debut)
-                print(tarif)
 
                 if(len(tarif) < 1):
                     tarif = ""
@@ -2516,7 +2434,7 @@ class PigeFinaleView(generics.ListAPIView):
 
                 if(pub.secteur):
                     secteur = pub.secteur.Nom
-                print("charaf")
+
                 response.append({
                     "id": i,
                     'media': 'RD',
@@ -2564,13 +2482,12 @@ class PigeFinaleView(generics.ListAPIView):
                                             produit=None)
                                     else:
                                         qs = qs | marque.pub_set.all()
-                                        print("marque")
+
                                 qs = qs | annonceur.pub_set.filter(
                                     marque=None)
 
                             else:
                                 qs = qs | annonceur.pub_set.all()
-                                print("annonceur")
 
             queryset = qs.filter(
                 confirmed=True
