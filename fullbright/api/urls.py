@@ -196,6 +196,7 @@ urlpatterns = [
     path('tarifradio/<int:pk>/', TarifRadioDetail.as_view()),
 
     path('pigesfinale/', PigeFinaleView.as_view()),
+    path('pigesfinaleadmin/', PigeFinaleAdminView.as_view()),
 
 
 
