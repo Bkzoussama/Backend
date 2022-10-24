@@ -2360,7 +2360,8 @@ class PigeFinaleView(generics.ListAPIView):
                     'tarifsec': tarif[0].prix if tarif != ''else '/'
                 })
                 i += 1
-            response = sorted(response, key=lambda d: d['debut'])
+            response = sorted(response, key=lambda d: d['date'])
+            response = sorted(response, key=lambda d: d['support'])
 
             # Radio
             qs = PubliciteRadio.objects.none()
@@ -2471,7 +2472,7 @@ class PigeFinaleView(generics.ListAPIView):
                     'tarifsec': tarif[0].prix if tarif != ''else '/'
                 })
                 i += 1
-            response = sorted(response, key=lambda d: d['debut'])
+            response = sorted(response, key=lambda d: d['date'])
 
             # "# Afficheur
             qs = Pub.objects.none()
@@ -2568,93 +2569,98 @@ class PigeFinaleView(generics.ListAPIView):
                 i += 1
 
             # "# Article
-            # qs = Article.objects.none()
+            qs = Article.objects.none()
 
-            # for abonnement in self.request.user.abonnement_set.all():
-            #     if timezone.now().date() <= abonnement.date_fin and abonnement.service == "J":
-            #         for contract in abonnement.contract_set.all():
-            #             for annonceur in contract.annonceurs.all():
-            #                 if contract.marques.filter(NomAnnonceur=annonceur).exists():
-            #                     for marque in contract.marques.filter(NomAnnonceur=annonceur):
-            #                         if contract.produits.filter(NomMarque=marque).exists():
-            #                             for produit in contract.produits.filter(NomMarque=marque):
-            #                                 qs = qs | produit.article_set.all()
-            #                             qs = qs | marque.article_set.filter(
-            #                                 produit=None)
-            #                         else:
-            #                             qs = qs | marque.article_set.all()
-            #                             print("marque")
-            #                     qs = qs | annonceur.article_set.filter(
-            #                         marque=None)
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "J":
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+                                            qs = qs | produit.article_set.all()
+                                        qs = qs | marque.article_set.filter(
+                                            produit=None)
+                                    else:
+                                        qs = qs | marque.article_set.all()
+                                        print("marque")
+                                qs = qs | annonceur.article_set.filter(
+                                    marque=None)
 
-            #                 else:
-            #                     qs = qs | annonceur.article_set.all()
-            #                     print("annonceur")
+                            else:
+                                qs = qs | annonceur.article_set.all()
+                                print("annonceur")
 
-            # queryset = qs.filter(
-            #     confirmed=True
-            # )
-            # videos = Article.objects.none()
-            # for abonnement in self.request.user.abonnement_set.all():
-            #     if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
-            #         for contract in abonnement.contract_set.all():
-            #             if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
-            #                 videos = videos | queryset.filter(date_creation__range=(
-            #                     timezone.now().date() - timedelta(days=30), timezone.now().date()))
+            queryset = qs.filter(
+                confirmed=True
+            )
+            videos = Article.objects.none()
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                    for contract in abonnement.contract_set.all():
+                        if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
+                            videos = videos | queryset.filter(
+                                date_creation__range=(debut[0], date_fin))
 
-            # for pub in videos:
+            for pub in videos:
 
-            #     tarif = ""
+                tarif = ""
 
-            #     marque = '-'
-            #     produit = '-'
-            #     segment = '-'
-            #     marche = '-'
-            #     famille = '-'
-            #     secteur = '-'
+                marque = '-'
+                produit = '-'
+                segment = '-'
+                marche = '-'
+                famille = '-'
+                secteur = '-'
 
-            #     if(pub.marque):
-            #         marque = pub.marque.Nom
+                if(pub.marque):
+                    marque = pub.marque.Nom
 
-            #     if(pub.produit):
-            #         produit = pub.produit.Nom
+                if(pub.produit):
+                    produit = pub.produit.Nom
 
-            #     if(pub.segment):
-            #         segment = pub.segment.Nom
+                if(pub.segment):
+                    segment = pub.segment.Nom
 
-            #     if(pub.marche):
-            #         marche = pub.marche.Nom
+                if(pub.marche):
+                    marche = pub.marche.Nom
 
-            #     if(pub.famille):
-            #         famille = pub.famille.Nom
+                if(pub.famille):
+                    famille = pub.famille.Nom
 
-            #     if(pub.secteur):
-            #         secteur = pub.secteur.Nom
+                if(pub.secteur):
+                    secteur = pub.secteur.Nom
 
-            #     response.append({
-            #         "id": i,
-            #         'media': 'Journal',
-            #         'date': pub.date_creation,
-            #         'support': pub.edition.journal.nomJournal,
-            #         "debut": "-",
-            #         "duree": "-",
-            #         "couleur": pub.couleur,
-            #         "code": "12",
-            #         "message": pub.accroche,
-            #         "annonceur": pub.annonceur.Nom,
-            #         "marque": marque,
-            #         "produit": produit,
-            #         "segment": segment,
-            #         "marche": marche,
-            #         "famille": famille,
-            #         "secteur": secteur,
-            #         "avant": pub.page_precedente,
-            #         'apres': pub.page_suivante,
-            #         "ecran": "-",
-            #         'tarifbrut': '',
-            #         'tarifsec': ''
-            #     })
-            #     i += 1
+                response.append({
+                    "id": i,
+                    'media': 'Journal',
+                    'date': pub.date_creation,
+                    'support': pub.edition.journal.nomJournal,
+                    "debut": "-",
+                    "duree": "-",
+                    "couleur": pub.couleur,
+                    "message": pub.accroche,
+                    "annonceur": pub.annonceur.Nom,
+                    "marque": marque,
+                    "produit": produit,
+                    "segment": segment,
+                    "marche": marche,
+                    "famille": famille,
+                    "secteur": secteur,
+                    "avant": pub.page_precedente,
+                    'apres': pub.page_suivante,
+                    "ecran": "/",
+                    "afficheur": "/",
+                    "panneau":  "/",
+                    "adresse":  "/",
+                    "wilaya":  "/",
+                    "apc":  "/",
+                    "code": pub.code,
+                    'tarifbrut': '/',
+                    'tarifsec': '/'
+                })
+                i += 1
 
             return Response(sorted(response, key=lambda d: d['media']))
 
@@ -2767,7 +2773,7 @@ class PigeFinaleAdminView(generics.ListAPIView):
                 'tarifsec': tarif[0].prix if tarif != ''else '/'
             })
             i += 1
-        response = sorted(response, key=lambda d: d['debut'])
+        response = sorted(response, key=lambda d: (d['date']))
 
         # Radio
         qs = PubliciteRadio.objects.all()
@@ -2855,7 +2861,7 @@ class PigeFinaleAdminView(generics.ListAPIView):
                 'tarifsec': tarif[0].prix if tarif != ''else '/'
             })
             i += 1
-        response = sorted(response, key=lambda d: d['debut'])
+        response = sorted(response, key=lambda d: d['date'])
 
         # "# Afficheur
         qs = Pub.objects.all()
@@ -2864,8 +2870,8 @@ class PigeFinaleAdminView(generics.ListAPIView):
         )
         videos = Pub.objects.none()
 
-
-        videos = videos | queryset.filter(date_creation__range=(debut[0], date_fin))
+        videos = videos | queryset.filter(
+            date_creation__range=(debut[0], date_fin))
 
         for pub in videos:
 
@@ -2928,92 +2934,74 @@ class PigeFinaleAdminView(generics.ListAPIView):
             i += 1
 
         # "# Article
-        # qs = Article.objects.none()
 
-        # for abonnement in self.request.user.abonnement_set.all():
-        #     if timezone.now().date() <= abonnement.date_fin and abonnement.service == "J":
-        #         for contract in abonnement.contract_set.all():
-        #             for annonceur in contract.annonceurs.all():
-        #                 if contract.marques.filter(NomAnnonceur=annonceur).exists():
-        #                     for marque in contract.marques.filter(NomAnnonceur=annonceur):
-        #                         if contract.produits.filter(NomMarque=marque).exists():
-        #                             for produit in contract.produits.filter(NomMarque=marque):
-        #                                 qs = qs | produit.article_set.all()
-        #                             qs = qs | marque.article_set.filter(
-        #                                 produit=None)
-        #                         else:
-        #                             qs = qs | marque.article_set.all()
-        #                             print("marque")
-        #                     qs = qs | annonceur.article_set.filter(
-        #                         marque=None)
+        qs = Article.objects.all()
+        queryset = qs.filter(
+            confirmed=True
+        )
+        videos = Article.objects.none()
+        videos = videos | queryset.filter(date_creation__range=(
+            debut[0], date_fin))
 
-        #                 else:
-        #                     qs = qs | annonceur.article_set.all()
-        #                     print("annonceur")
+        for pub in videos:
 
-        # queryset = qs.filter(
-        #     confirmed=True
-        # )
-        # videos = Article.objects.none()
-        # for abonnement in self.request.user.abonnement_set.all():
-        #     if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
-        #         for contract in abonnement.contract_set.all():
-        #             if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
-        #                 videos = videos | queryset.filter(date_creation__range=(
-        #                     timezone.now().date() - timedelta(days=30), timezone.now().date()))
+            tarif = ""
 
-        # for pub in videos:
+            marque = '-'
+            produit = '-'
+            segment = '-'
+            marche = '-'
+            famille = '-'
+            secteur = '-'
 
-        #     tarif = ""
+            if(pub.marque):
+                marque = pub.marque.Nom
 
-        #     marque = '-'
-        #     produit = '-'
-        #     segment = '-'
-        #     marche = '-'
-        #     famille = '-'
-        #     secteur = '-'
+            if(pub.produit):
+                produit = pub.produit.Nom
 
-        #     if(pub.marque):
-        #         marque = pub.marque.Nom
+            if(pub.segment):
+                segment = pub.segment.Nom
 
-        #     if(pub.produit):
-        #         produit = pub.produit.Nom
+            if(pub.marche):
+                marche = pub.marche.Nom
 
-        #     if(pub.segment):
-        #         segment = pub.segment.Nom
+            if(pub.famille):
+                famille = pub.famille.Nom
 
-        #     if(pub.marche):
-        #         marche = pub.marche.Nom
+            if(pub.secteur):
+                secteur = pub.secteur.Nom
 
-        #     if(pub.famille):
-        #         famille = pub.famille.Nom
-
-        #     if(pub.secteur):
-        #         secteur = pub.secteur.Nom
-
-        #     response.append({
-        #         "id": i,
-        #         'media': 'Journal',
-        #         'date': pub.date_creation,
-        #         'support': pub.edition.journal.nomJournal,
-        #         "debut": "-",
-        #         "duree": "-",
-        #         "couleur": pub.couleur,
-        #         "code": "12",
-        #         "message": pub.accroche,
-        #         "annonceur": pub.annonceur.Nom,
-        #         "marque": marque,
-        #         "produit": produit,
-        #         "segment": segment,
-        #         "marche": marche,
-        #         "famille": famille,
-        #         "secteur": secteur,
-        #         "avant": pub.page_precedente,
-        #         'apres': pub.page_suivante,
-        #         "ecran": "-",
-        #         'tarifbrut': '',
-        #         'tarifsec': ''
-        #     })
-        #     i += 1
+            response.append({
+                "id": i,
+                'media': 'Journal',
+                'date': pub.date_creation,
+                'support': pub.edition.journal.nomJournal,
+                "debut": "-",
+                "duree": "-",
+                "couleur": pub.couleur,
+                "code": "12",
+                "message": pub.accroche,
+                "annonceur": pub.annonceur.Nom,
+                "marque": marque,
+                "produit": produit,
+                "segment": segment,
+                "marche": marche,
+                "famille": famille,
+                "secteur": secteur,
+                "avant": pub.page_precedente,
+                'apres': pub.page_suivante,
+                "ecran": "/",
+                "afficheur": "/",
+                "panneau":  "/",
+                "adresse":  "/",
+                "wilaya":  "/",
+                "apc":  "/",
+                "code": pub.code,
+                'tarifbrut': '/',
+                'tarifsec': '/'
+            })
+            i += 1
+        response = sorted(response, key=lambda d: d['date'])
 
         return Response(sorted(response, key=lambda d: d['media']))
