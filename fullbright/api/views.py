@@ -2597,7 +2597,7 @@ class PigeFinaleView(generics.ListAPIView):
             )
             videos = Article.objects.none()
             for abonnement in self.request.user.abonnement_set.all():
-                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'J':
                     for contract in abonnement.contract_set.all():
                         if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
                             videos = videos | queryset.filter(
