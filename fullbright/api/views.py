@@ -212,7 +212,7 @@ class ArticleView(generics.ListCreateAPIView):
     def get_queryset(self):
         edition = self.request.query_params.get('edition')
         queryset = Article.objects.filter(
-            edition=edition, confirmed=True).order_by('-date_creation')
+            edition=edition, confirmed=True)
         return queryset
 
 
@@ -224,11 +224,20 @@ class PostArticleView(generics.ListCreateAPIView):
         data = request.data
         code = ""
         count = Article.objects.filter(
-            date_creation=date.today()).values_list('code', flat=True).distinct().count()
+            edition__date=date.today()).values_list('code', flat=True).distinct().count()
         code = date.today().strftime("%d%m%Y") + "-" + "JR" + "-" + \
-            "{0:0=3d}".format(count+1) + "-" + data['language']
+            "{0:0=3d}".format(count+1) + "-" + "AR"
+        _mutable = data._mutable
+
+        # set to mutable
+        data._mutable = True
+        print("data['type']  = ", data['type'])
+        if(data['type'] == '0'):
+            data['image'] = None
+        # set mutable flag back
         data['code'] = code
-        data['confirmed'] = False
+        data['confirmed'] = True
+        data._mutable = _mutable
         serializer = ArticleSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -243,7 +252,7 @@ class ArticleConfirmed(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Article.objects.filter(
-            confirmed=False).order_by('-date_creation')
+            confirmed=False)
         return queryset
 
 
@@ -277,6 +286,59 @@ class Articlesearch(generics.ListAPIView):
             edts['num_article__sum'] = 0
 
         return Response({"nbjr": edts['num_article__sum']})
+
+
+class SearchFilter(generics.ListAPIView):
+    # permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    serializer_class = ArticleSerializer
+    pagination_class = MyPagination
+
+    def get_queryset(self):
+        accroche = self.request.query_params.get('accroche')
+        annonceur = self.request.query_params.get('annonceur')
+        marque = self.request.query_params.get('marque')
+        produit = self.request.query_params.get('produit')
+        edition = self.request.query_params.get('edition')
+        type = self.request.query_params.get('type')
+
+        if(annonceur and not marque and not produit):
+            queryset = Article.objects.filter(
+                # accroche__icontains=accroche,
+                annonceur=annonceur,
+                edition=edition,
+                type=type,
+                confirmed=True
+            )
+
+        elif(annonceur and marque and not produit):
+            queryset = Article.objects.filter(
+                # accroche__icontains=accroche,
+                annonceur=annonceur,
+                marque=marque,
+                edition=edition,
+                type=type,
+
+                confirmed=True
+            )
+        elif(annonceur and marque and produit):
+            queryset = Article.objects.filter(
+                # accroche__icontains=accroche,
+                annonceur=annonceur,
+                marque=marque,
+                produit=produit,
+                edition=edition,
+                type=type,
+
+                confirmed=True
+            )
+        elif(not annonceur and not marque and not produit):
+            queryset = Article.objects.filter(
+                # accroche__icontains=accroche,
+                edition=edition,
+                type=type,
+                confirmed=True)
+
+        return queryset
 
 
 # ---------------------------------------------------------------------------------------------
@@ -586,7 +648,7 @@ class SecteurView(generics.ListCreateAPIView):
 
 
 class GetSecteursView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+    permission_classes = [IsAuthenticated]
     serializer_class = SecteurSerializer
     queryset = Secteur.objects.all()
 
@@ -805,63 +867,6 @@ class ProduitFilterForContract(generics.ListAPIView):
     def get_queryset(self):
         NomMarque = self.request.query_params.getlist('NomMarque[]')
         queryset = Produit.objects.filter(NomMarque__in=NomMarque)
-        return queryset
-
-
-class SearchFilter(generics.ListAPIView):
-    # permission_classes = [IsAuthenticated & AnnonceurPermissions]
-    serializer_class = ArticleSerializer
-    pagination_class = MyPagination
-
-    def get_queryset(self):
-        accroche = self.request.query_params.get('accroche')
-        langue = self.request.query_params.get('langue')
-        annonceur = self.request.query_params.get('annonceur')
-        marque = self.request.query_params.get('marque')
-        produit = self.request.query_params.get('produit')
-        edition = self.request.query_params.get('edition')
-        start = self.request.query_params.get('start')
-        end = self.request.query_params.get('end')
-
-        if(annonceur and not marque and not produit):
-            queryset = Article.objects.filter(
-                accroche__icontains=accroche,
-                annonceur=annonceur,
-                language__icontains=langue,
-                edition=edition,
-                confirmed=True
-            )
-
-        elif(annonceur and marque and not produit):
-            queryset = Article.objects.filter(
-                accroche__icontains=accroche,
-                annonceur=annonceur,
-                marque=marque,
-                language__icontains=langue,
-                edition=edition,
-                confirmed=True
-            )
-        elif(annonceur and marque and produit):
-            queryset = Article.objects.filter(
-                accroche__icontains=accroche,
-                annonceur=annonceur,
-                marque=marque,
-                produit=produit,
-                language__icontains=langue,
-                edition=edition,
-                confirmed=True
-            )
-        elif(not annonceur and not marque and not produit):
-            queryset = Article.objects.filter(
-                accroche__icontains=accroche,
-                language__icontains=langue,
-                edition=edition,
-                confirmed=True)
-
-        queryset = [article for article in queryset
-                    if article.date_creation >= datetime.strptime(start, '%Y-%m-%d').date()
-                    and article.date_creation <= datetime.strptime(end, '%Y-%m-%d').date()]
-
         return queryset
 
 
@@ -1191,7 +1196,7 @@ class PubliciteLinkClient(generics.ListAPIView):
         if self.request.user.is_client == True:
             qs = Pub.objects.none()
             for abonnement in self.request.user.abonnement_set.all():
-                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "P":
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "C":
                     for contract in abonnement.contract_set.all():
                         for annonceur in contract.annonceurs.all():
                             if contract.marques.filter(NomAnnonceur=annonceur).exists():
@@ -1203,6 +1208,7 @@ class PubliciteLinkClient(generics.ListAPIView):
                                         qs = qs | marque.publicite_set.all()
                             else:
                                 qs = qs | annonceur.publicite_set.all()
+            print(len(qs))
             return qs.filter(id=id)
 
 
@@ -2232,9 +2238,18 @@ class PigeFinaleView(generics.ListAPIView):
         debut = request.query_params.get('debut'),
         date_fin = request.query_params.get('date_fin')
         print("**************************")
-        print(debut)
+        print(debut[0])
         print(date_fin)
 
+        # date = debut[0]
+
+        # if(debut[0].day == 0):
+        #     debut[0].day = debut[0].day + 1
+        # if(len(date_fin) < 10):
+        #     date_fin = date_fin[:5]+"0"+date_fin[5:]
+
+        print(debut)
+        print(date_fin)
         print("**************************")
 
         if self.request.user.is_client == True:
@@ -2356,6 +2371,13 @@ class PigeFinaleView(generics.ListAPIView):
                     "adresse": "/",
                     "wilaya": "/",
                     "apc": "/",
+                    "typeachat": "achat classic",
+                    "periodicite": "quotidienne",
+                    "mois": "",
+                    "datedebut": "",
+                    "datefin": "",
+                    "nbjour": "",
+                    "langue": "",
                     'tarifbrut': (((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*(tarif[0].prix*ind))/30) if tarif != '' else '/',
                     'tarifsec': tarif[0].prix if tarif != ''else '/'
                 })
@@ -2468,6 +2490,13 @@ class PigeFinaleView(generics.ListAPIView):
                     "adresse": '/',
                     "wilaya": '/',
                     "apc": '/',
+                    "typeachat": "achat classic",
+                    "periodicite": "quotidienne",
+                    "mois": "",
+                    "datedebut": "",
+                    "datefin": "",
+                    "nbjour": "",
+                    "langue": "",
                     'tarifbrut': ((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*tarif[0].prix/30) if tarif != '' else '/',
                     'tarifsec': tarif[0].prix if tarif != ''else '/'
                 })
@@ -2478,7 +2507,7 @@ class PigeFinaleView(generics.ListAPIView):
             qs = Pub.objects.none()
 
             for abonnement in self.request.user.abonnement_set.all():
-                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "J":
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "P":
                     for contract in abonnement.contract_set.all():
                         for annonceur in contract.annonceurs.all():
                             if contract.marques.filter(NomAnnonceur=annonceur).exists():
@@ -2502,13 +2531,24 @@ class PigeFinaleView(generics.ListAPIView):
             )
             videos = Pub.objects.none()
             for abonnement in self.request.user.abonnement_set.all():
-                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'P':
                     for contract in abonnement.contract_set.all():
                         if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
                             videos = videos | queryset.filter(
                                 date_creation__range=(debut[0], date_fin))
 
             for pub in videos:
+                h = Pub.objects.filter(
+                    accroche=pub.accroche, panneau=pub.panneau)
+                h = h.order_by("jour__date")
+                z = h[0]
+                print("*"*25)
+                for x in h:
+                    print(x)
+                for x in h:
+                    print(x.jour.date)
+                    if x.jour.date > z.jour.date:
+                        z = x
 
                 tarif = ""
 
@@ -2537,6 +2577,7 @@ class PigeFinaleView(generics.ListAPIView):
                 if(pub.secteur):
                     secteur = pub.secteur.Nom
 
+                nbj = (z.jour.date - pub.jour.date)/60/60/24
                 response.append({
                     "id": i,
                     'media': 'AF',
@@ -2562,6 +2603,14 @@ class PigeFinaleView(generics.ListAPIView):
                     "adresse": pub.panneau.adresse,
                     "wilaya": pub.panneau.apc.commune.Wilaya.nom_wilaya,
                     "apc": pub.panneau.apc.nom_APC,
+                    "typeachat": "achat classic",
+                    "periodicite": "quotidienne",
+                    "mois": pub.date_creation.month,
+                    "datedebut": pub.jour.date,
+                    "datefin": z.date_creation,
+                    "nbjour": nbj,
+                    "langue": pub.langue,
+
                     "code": pub.code,
                     'tarifbrut': pub.prix,
                     'tarifsec': '/',
@@ -2601,7 +2650,7 @@ class PigeFinaleView(generics.ListAPIView):
                     for contract in abonnement.contract_set.all():
                         if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
                             videos = videos | queryset.filter(
-                                date_creation__range=(debut[0], date_fin))
+                                edition__date__range=(debut[0], date_fin))
 
             for pub in videos:
 
@@ -2635,7 +2684,7 @@ class PigeFinaleView(generics.ListAPIView):
                 response.append({
                     "id": i,
                     'media': 'Journal',
-                    'date': pub.date_creation,
+                    'date': pub.edition.date,
                     'support': pub.edition.journal.nomJournal,
                     "debut": "-",
                     "duree": "-",
@@ -2656,6 +2705,13 @@ class PigeFinaleView(generics.ListAPIView):
                     "adresse":  "/",
                     "wilaya":  "/",
                     "apc":  "/",
+                    "typeachat": "achat classic",
+                    "periodicite": "quotidienne",
+                    "mois": "",
+                    "datedebut": "",
+                    "datefin": "",
+                    "nbjour": "",
+                    "langue": "",
                     "code": pub.code,
                     'tarifbrut': '/',
                     'tarifsec': '/'
@@ -2769,6 +2825,13 @@ class PigeFinaleAdminView(generics.ListAPIView):
                 "adresse": "/",
                 "wilaya": "/",
                 "apc": "/",
+                "typeachat": "achat classic",
+                "periodicite": "quotidienne",
+                "mois": "",
+                "datedebut": "",
+                "datefin": "",
+                "nbjour": "",
+                "langue": "",
                 'tarifbrut': (((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*(tarif[0].prix*ind))/30) if tarif != '' else '/',
                 'tarifsec': tarif[0].prix if tarif != ''else '/'
             })
@@ -2858,6 +2921,13 @@ class PigeFinaleAdminView(generics.ListAPIView):
                 "adresse": '/',
                 "wilaya": '/',
                 "apc": '/',
+                "typeachat": "achat classic",
+                "periodicite": "quotidienne",
+                "mois": "",
+                "datedebut": "",
+                "datefin": "",
+                "nbjour": "",
+                "langue": "",
                 'tarifbrut': ((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*tarif[0].prix/30) if tarif != '' else '/',
                 'tarifsec': tarif[0].prix if tarif != ''else '/'
             })
@@ -2875,6 +2945,11 @@ class PigeFinaleAdminView(generics.ListAPIView):
             date_creation__range=(debut[0], date_fin))
 
         for pub in videos:
+            i = Pub.objects.filter(accroche=pub.accroche)
+            z = i[0]
+            for x in i:
+                if x.jour > z.jour:
+                    z = x
 
             tarif = ""
 
@@ -2928,9 +3003,19 @@ class PigeFinaleAdminView(generics.ListAPIView):
                 "adresse": pub.panneau.adresse,
                 "wilaya": pub.panneau.apc.commune.Wilaya.nom_wilaya,
                 "apc": pub.panneau.apc.nom_APC,
-                "code": pub.code,
+
+                "typeachat": "achat classic",
+                "periodicite": "quotidienne",
+                "mois": pub.date_creation.month,
+                "datedebut": pub.date_creation,
+                "datefin": z.date_creation,
+                "nbjour": z.date_creation - pub.date_creation,
+                "langue": pub.langue,
+
+
                 'tarifbrut': pub.prix,
                 'tarifsec': '/',
+
             })
             i += 1
 
@@ -2998,6 +3083,13 @@ class PigeFinaleAdminView(generics.ListAPIView):
                 "adresse":  "/",
                 "wilaya":  "/",
                 "apc":  "/",
+                "typeachat": "achat classic",
+                "periodicite": "quotidienne",
+                "mois": "",
+                "datedebut": "",
+                "datefin": "",
+                "nbjour": "",
+                "langue": "",
                 "code": pub.code,
                 'tarifbrut': '/',
                 'tarifsec': '/'
@@ -3006,3 +3098,97 @@ class PigeFinaleAdminView(generics.ListAPIView):
         response = sorted(response, key=lambda d: d['date'])
 
         return Response(sorted(response, key=lambda d: d['media']))
+
+
+class RechercheGenerale(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        accroche = request.query_params.get('accroche'),
+        secteurReq = request.query_params.get('secteur'),
+
+        response = []
+        queryset = []
+
+        qs = Article.objects.none()
+
+        for abonnement in self.request.user.abonnement_set.all():
+            if timezone.now().date() <= abonnement.date_fin and abonnement.service == "J":
+                for contract in abonnement.contract_set.all():
+                    for annonceur in contract.annonceurs.all():
+                        if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                            for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                if contract.produits.filter(NomMarque=marque).exists():
+                                    for produit in contract.produits.filter(NomMarque=marque):
+                                        qs = qs | produit.article_set.all()
+                                    qs = qs | marque.article_set.filter(
+                                        produit=None)
+                                else:
+                                    qs = qs | marque.article_set.all()
+                                    print("marque")
+                            qs = qs | annonceur.article_set.filter(
+                                marque=None)
+
+                        else:
+                            qs = qs | annonceur.article_set.all()
+                            print("annonceur")
+
+        queryset = qs.filter(
+            confirmed=True
+        )
+        videos = Article.objects.none()
+        for abonnement in self.request.user.abonnement_set.all():
+            if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'J':
+                for contract in abonnement.contract_set.all():
+                    if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
+                        videos = videos | queryset.filter(
+                            edition__date__range=(contract.date_debut, contract.date_fin))
+
+        print(accroche, secteurReq)
+        if secteurReq[0]:
+            secteurReq = Secteur.objects.filter(id=int(secteurReq[0]))
+        else:
+            secteurReq = 0
+
+        if secteurReq != 0:
+            queryset = videos.filter(secteur=secteurReq[0])
+            queryset = queryset.filter(accroche__icontains=accroche[0])
+        else:
+            queryset = videos.filter(accroche__icontains=accroche[0])
+
+        for item in queryset:
+            secteur = ""
+            if(item.secteur):
+                secteur = item.secteur.Nom
+            response.append({
+                "id": item.id,
+                "date": item.edition.date,
+                "type": "journal",
+                "secteur": secteur,
+                "support": item.edition.journal.nomJournal,
+                "accroche": item.accroche[:25]
+            })
+        response = sorted(response, key=lambda d: d['date'])
+
+        if secteurReq != 0:
+            queryset = Publicite.objects.filter(secteur=secteurReq[0])
+            queryset = queryset.filter(message__icontains=accroche[0])
+        else:
+            queryset = Publicite.objects.filter(message__icontains=accroche[0])
+
+        for item in queryset:
+            secteur = ""
+            if(item.secteur):
+                secteur = item.secteur.Nom
+            response.append({
+                "id": item.id,
+                "date": item.jour.date,
+                "type": "TV",
+                "secteur": secteur,
+                "support": item.jour.chaine.nom,
+                "accroche": item.message[:25],
+            })
+        response = sorted(response, key=lambda d: d['date'])
+
+        return Response(sorted(response, key=lambda d: d['secteur']))

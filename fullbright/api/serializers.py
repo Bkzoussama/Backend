@@ -6,13 +6,13 @@ from django.db.models.aggregates import Count, Sum
 class JournalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Journal
-        fields = ['id', 'nomJournal', 'image']
+        fields = ['id', 'nomJournal', 'image','langue']
 
 
 class EditionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Edition
-        fields = ['id', 'date', "numero", "journal", "image"]
+        fields = ['id', 'date', "numero", "journal"]
 
 
 class ArticleClientSerializer(serializers.ModelSerializer):
@@ -79,7 +79,7 @@ class ArticleClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'date_creation', "language", "edition", "accroche", "couleur", "num_page",
+        fields = ['id', "edition", "accroche", "couleur", "num_page", "type",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
@@ -149,7 +149,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'code', 'date_creation','type' ,"language", "edition", "accroche", "couleur", "num_page",
+        fields = ['id', 'code', 'type', "edition", "accroche", "couleur", "num_page",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", 'segment', 'marche', 'famille', 'secteur', "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'confirmed', 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
@@ -442,7 +442,7 @@ class ClientArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'date_creation', "language", "edition", "accroche",
+        fields = ['id', 'date_creation', "edition", "accroche", "type"
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
                   "numEdition", "dateEdition", "nomJournal"]
 

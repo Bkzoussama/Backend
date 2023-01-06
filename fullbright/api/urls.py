@@ -198,6 +198,9 @@ urlpatterns = [
     path('pigesfinale/', PigeFinaleView.as_view()),
     path('pigesfinaleadmin/', PigeFinaleAdminView.as_view()),
 
+    
+    path('recherchegenerale/', RechercheGenerale.as_view()),
+
 
 
 ]

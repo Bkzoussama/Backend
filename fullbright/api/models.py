@@ -8,8 +8,16 @@ from users.serializers import *
 
 
 class Journal(models.Model):
+    languages = (
+        ("AR", "arabe"),
+        ("FR", "francais"),
+        ("AF", "arabe + francais"),
+
+    )
     nomJournal = models.CharField(max_length=20, default="", unique=True)
-    image = models.ImageField(upload_to="media", default="")
+    image = models.ImageField(
+        upload_to="media", default="", null=True, blank=True)
+    langue = models.CharField(max_length=2, default="", choices=languages)
 
     def __str__(self):
         return self.nomJournal
@@ -19,18 +27,13 @@ class Edition(models.Model):
     date = models.DateField()
     numero = models.IntegerField()
     journal = models.ForeignKey(Journal, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="media", default="")
 
     def __str__(self):
         return str(self.journal)+"  ===>  "+str(self.date)+"  ===>  "+str(self.id)
 
 
 class Article(models.Model):
-    languages = (
-        ("AR", "arabe"),
-        ("FR", "francais"),
-        ("AF", "arabe + francais"),
-    )
+
     annonceur = models.ForeignKey(
         'Annonceur', on_delete=models.CASCADE)
     marque = models.ForeignKey(
@@ -48,11 +51,11 @@ class Article(models.Model):
 
     type = models.BooleanField(default=False)
 
-    image = models.ImageField(upload_to="media",  default="")
-    date_creation = models.DateField()
-    language = models.CharField(max_length=2, default="", choices=languages)
+    image = models.ImageField(upload_to="media",  default="", null=True)
+
     edition = models.ForeignKey(Edition, on_delete=models.CASCADE)
-    accroche = models.CharField(max_length=10000, default="")
+    accroche = models.CharField(
+        max_length=10000, default="", null=True, blank=True)
     page_suivante = models.CharField(max_length=50, default="")
     page_precedente = models.CharField(max_length=50, default="")
     num_page = models.IntegerField(default=0, null=True, blank=True)
@@ -256,15 +259,6 @@ class Abonnement(models.Model):
 # date d'expiration base sur l'abonnemnet
 
 
-class Contract(models.Model):
-    abonnement = models.ForeignKey(Abonnement, on_delete=models.CASCADE)
-    annonceurs = models.ManyToManyField(Annonceur)
-    marques = models.ManyToManyField(Marque, null=True, blank=True)
-    produits = models.ManyToManyField(Produit, null=True, blank=True)
-    date_debut = models.DateField()
-    date_fin = models.DateField()
-
-
 class Publicite(models.Model):
     languages = (
         ("AR", "arabe"),
@@ -292,7 +286,7 @@ class Publicite(models.Model):
         upload_to="media",  default="", null=True, blank=True)
     debut = models.TimeField()
     fin = models.TimeField(
-        default=datetime.datetime.now().strftime("%H:%M:%S"))
+        default="00:00:00")
 
     rang = models.IntegerField(null=True, blank=True)
     encombrement = models.IntegerField(null=True, blank=True)
@@ -308,7 +302,7 @@ class Programme(models.Model):
     message = models.CharField(max_length=1200, default="")
     debut = models.TimeField()
     fin = models.TimeField(
-        default=datetime.datetime.now().strftime("%H:%M:%S"))
+        default="00:00:00")
 
 
 class Jour(models.Model):
@@ -328,7 +322,7 @@ class TarifChaine(models.Model):
     chaine = models.ForeignKey('Chaine', on_delete=models.CASCADE)
     debut = models.TimeField()
     fin = models.TimeField(
-        default=datetime.datetime.now().strftime("%H:%M:%S"))
+        default="00:00:00")
     prix = models.IntegerField(null=True, blank=True)
 
 
@@ -367,7 +361,7 @@ class PubliciteRadio(models.Model):
         upload_to="media",  default="", null=True, blank=True)
     debut = models.TimeField()
     fin = models.TimeField(
-        default=datetime.datetime.now().strftime("%H:%M:%S"))
+        default="00:00:00")
 
     rang = models.IntegerField(null=True, blank=True)
     encombrement = models.IntegerField(null=True, blank=True)
@@ -383,7 +377,7 @@ class ProgrammeRadio(models.Model):
     message = models.CharField(max_length=1200, default="")
     debut = models.TimeField()
     fin = models.TimeField(
-        default=datetime.datetime.now().strftime("%H:%M:%S"))
+        default="00:00:00")
 
 
 class JourRadio(models.Model):
@@ -403,5 +397,15 @@ class TarifRadio(models.Model):
     radio = models.ForeignKey('Radio', on_delete=models.CASCADE)
     debut = models.TimeField()
     fin = models.TimeField(
-        default=datetime.datetime.now().strftime("%H:%M:%S"))
+        default="00:00:00")
     prix = models.IntegerField(null=True, blank=True)
+
+
+class Contract(models.Model):
+    abonnement = models.ForeignKey(Abonnement, on_delete=models.CASCADE)
+    annonceurs = models.ManyToManyField(Annonceur)
+    marques = models.ManyToManyField(Marque, null=True, blank=True)
+    produits = models.ManyToManyField(Produit, null=True, blank=True)
+    chaine = models.ManyToManyField(Chaine, null=True, blank=True)
+    date_debut = models.DateField()
+    date_fin = models.DateField()
