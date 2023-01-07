@@ -2542,11 +2542,8 @@ class PigeFinaleView(generics.ListAPIView):
                     accroche=pub.accroche, panneau=pub.panneau)
                 h = h.order_by("jour__date")
                 z = h[0]
-                print("*"*25)
+
                 for x in h:
-                    print(x)
-                for x in h:
-                    print(x.jour.date)
                     if x.jour.date > z.jour.date:
                         z = x
 
@@ -2945,10 +2942,14 @@ class PigeFinaleAdminView(generics.ListAPIView):
             date_creation__range=(debut[0], date_fin))
 
         for pub in videos:
-            i = Pub.objects.filter(accroche=pub.accroche)
-            z = i[0]
-            for x in i:
-                if x.jour > z.jour:
+
+            h = Pub.objects.filter(
+                accroche=pub.accroche, panneau=pub.panneau)
+            h = h.order_by("jour__date")
+            z = h[0]
+
+            for x in h:
+                if x.jour.date > z.jour.date:
                     z = x
 
             tarif = ""
@@ -2977,6 +2978,8 @@ class PigeFinaleAdminView(generics.ListAPIView):
 
             if(pub.secteur):
                 secteur = pub.secteur.Nom
+
+            nbj = (z.jour.date - pub.jour.date)/60/60/24
 
             response.append({
                 "id": i,
@@ -3009,7 +3012,7 @@ class PigeFinaleAdminView(generics.ListAPIView):
                 "mois": pub.date_creation.month,
                 "datedebut": pub.date_creation,
                 "datefin": z.date_creation,
-                "nbjour": z.date_creation - pub.date_creation,
+                "nbjour": nbj,
                 "langue": pub.langue,
 
 
@@ -3026,7 +3029,7 @@ class PigeFinaleAdminView(generics.ListAPIView):
             confirmed=True
         )
         videos = Article.objects.none()
-        videos = videos | queryset.filter(date_creation__range=(
+        videos = videos | queryset.filter(edition__date__range=(
             debut[0], date_fin))
 
         for pub in videos:
@@ -3061,7 +3064,7 @@ class PigeFinaleAdminView(generics.ListAPIView):
             response.append({
                 "id": i,
                 'media': 'Journal',
-                'date': pub.date_creation,
+                'date': pub.edition.date,
                 'support': pub.edition.journal.nomJournal,
                 "debut": "-",
                 "duree": "-",
