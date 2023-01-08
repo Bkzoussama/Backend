@@ -3112,6 +3112,9 @@ class RechercheGenerale(generics.ListAPIView):
         secteurReq = request.query_params.get('secteur'),
 
         response = []
+        excel = []
+        index = 0
+
         queryset = []
 
         qs = Article.objects.none()
@@ -3140,12 +3143,12 @@ class RechercheGenerale(generics.ListAPIView):
         queryset = qs.filter(
             confirmed=True
         )
-        videos = Article.objects.none()
+        items = Article.objects.none()
         for abonnement in self.request.user.abonnement_set.all():
             if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'J':
                 for contract in abonnement.contract_set.all():
                     if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
-                        videos = videos | queryset.filter(
+                        items = items | queryset.filter(
                             edition__date__range=(contract.date_debut, contract.date_fin))
 
         print(accroche, secteurReq)
@@ -3155,10 +3158,10 @@ class RechercheGenerale(generics.ListAPIView):
             secteurReq = 0
 
         if secteurReq != 0:
-            queryset = videos.filter(secteur=secteurReq[0])
+            queryset = items.filter(secteur=secteurReq[0])
             queryset = queryset.filter(accroche__icontains=accroche[0])
         else:
-            queryset = videos.filter(accroche__icontains=accroche[0])
+            queryset = items.filter(accroche__icontains=accroche[0])
 
         for item in queryset:
             secteur = ""
@@ -3174,11 +3177,113 @@ class RechercheGenerale(generics.ListAPIView):
             })
         response = sorted(response, key=lambda d: d['date'])
 
+        for pub in queryset:
+
+            tarif = ""
+
+            marque = '-'
+            produit = '-'
+            segment = '-'
+            marche = '-'
+            famille = '-'
+            secteur = '-'
+
+            if(pub.marque):
+                marque = pub.marque.Nom
+
+            if(pub.produit):
+                produit = pub.produit.Nom
+
+            if(pub.segment):
+                segment = pub.segment.Nom
+
+            if(pub.marche):
+                marche = pub.marche.Nom
+
+            if(pub.famille):
+                famille = pub.famille.Nom
+
+            if(pub.secteur):
+                secteur = pub.secteur.Nom
+
+            excel.append({
+                "id": index,
+                'media': 'Journal',
+                'date': pub.edition.date,
+                'support': pub.edition.journal.nomJournal,
+                "debut": "-",
+                "duree": "-",
+                "couleur": pub.couleur,
+                "code": "12",
+                "message": pub.accroche,
+                "annonceur": pub.annonceur.Nom,
+                "marque": marque,
+                "produit": produit,
+                "segment": segment,
+                "marche": marche,
+                "famille": famille,
+                "secteur": secteur,
+                "avant": pub.page_precedente,
+                'apres': pub.page_suivante,
+                "ecran": "/",
+                "afficheur": "/",
+                "panneau":  "/",
+                "adresse":  "/",
+                "wilaya":  "/",
+                "apc":  "/",
+                "typeachat": "achat classic",
+                "periodicite": "quotidienne",
+                "mois": "",
+                "datedebut": "",
+                "datefin": "",
+                "nbjour": "",
+                "langue": "",
+                "code": pub.code,
+                'tarifbrut': '/',
+                'tarifsec': '/'
+            })
+            index += 1
+        excel = sorted(excel, key=lambda d: d['date'])
+
+        ###########################################################################################
+
+        qs = Publicite.objects.none()
+
+        for abonnement in self.request.user.abonnement_set.all():
+            if timezone.now().date() <= abonnement.date_fin and abonnement.service == "J":
+                for contract in abonnement.contract_set.all():
+                    for annonceur in contract.annonceurs.all():
+                        if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                            for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                if contract.produits.filter(NomMarque=marque).exists():
+                                    for produit in contract.produits.filter(NomMarque=marque):
+                                        qs = qs | produit.publicite_set.all()
+                                    qs = qs | marque.publicite_set.filter(
+                                        produit=None)
+                                else:
+                                    qs = qs | marque.publicite_set.all()
+                            qs = qs | annonceur.publicite_set.filter(
+                                marque=None)
+
+                        else:
+                            qs = qs | annonceur.publicite_set.all()
+
+        queryset = qs.filter(
+            confirmed=True
+        )
+        items = Publicite.objects.none()
+        for abonnement in self.request.user.abonnement_set.all():
+            if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                for contract in abonnement.contract_set.all():
+                    if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
+                        items = items | queryset.filter(
+                            jour__date__range=(contract.date_debut, contract.date_fin))
+
         if secteurReq != 0:
-            queryset = Publicite.objects.filter(secteur=secteurReq[0])
+            queryset = items.filter(secteur=secteurReq[0])
             queryset = queryset.filter(message__icontains=accroche[0])
         else:
-            queryset = Publicite.objects.filter(message__icontains=accroche[0])
+            queryset = items.filter(message__icontains=accroche[0])
 
         for item in queryset:
             secteur = ""
@@ -3194,4 +3299,106 @@ class RechercheGenerale(generics.ListAPIView):
             })
         response = sorted(response, key=lambda d: d['date'])
 
-        return Response(sorted(response, key=lambda d: d['secteur']))
+        for pub in queryset:
+            tarifs = TarifChaine.objects.filter(chaine=pub.jour.chaine)
+            indices = Indice.objects.filter(
+                chaine=pub.jour.chaine).order_by("-indice")
+
+            tarif = tarifs.filter(debut__lte=pub.debut, fin__gte=pub.debut)
+
+            duree = datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) if datetime.combine(date.today(), pub.fin) - datetime.combine(
+                date.today(), pub.debut) >= timedelta(seconds=1) else datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) + timedelta(hours=24)
+            indice = indices.filter(duree__lte=duree.total_seconds())
+            ind = 1
+
+            if len(indice) > 0:
+                ind = indice[len(indice)-1].indice/100
+
+            if(len(tarif) < 1):
+                tarif = ""
+
+            programmeAvant = Programme.objects.filter(
+                jour=pub.jour, fin__lte=pub.debut)
+            programmeApres = Programme.objects.filter(
+                jour=pub.jour, debut__gte=pub.fin)
+
+            if(len(programmeAvant) < 1):
+                programmeAvant = Publicite.objects.filter(
+                    jour=pub.jour, fin__lte=pub.debut)
+            if(len(programmeApres) < 1):
+                programmeApres = Publicite.objects.filter(
+                    jour=pub.jour, debut__gte=pub.fin)
+
+            marque = '/'
+            produit = '/'
+            segment = '/'
+            marche = '/'
+            famille = '/'
+            secteur = '/'
+
+            if(pub.marque):
+                marque = pub.marque.Nom
+
+            if(pub.produit):
+                produit = pub.produit.Nom
+
+            if(pub.segment):
+                segment = pub.segment.Nom
+
+            if(pub.marche):
+                marche = pub.marche.Nom
+
+            if(pub.famille):
+                famille = pub.famille.Nom
+
+            if(pub.secteur):
+                secteur = pub.secteur.Nom
+
+            excel.append({
+                "id": index,
+                'media': 'TV',
+                'date': pub.jour.date,
+                'support': pub.jour.chaine.nom,
+                "debut": pub.debut,
+                "duree": duree,
+                "couleur": '/',
+                "code": pub.code,
+                "message": pub.message,
+                "annonceur": pub.annonceur.Nom,
+                "marque": marque,
+                "produit": produit,
+                "segment": segment,
+                "marche": marche,
+                "famille": famille,
+                "secteur": secteur,
+                "avant": programmeAvant[0].message if len(programmeAvant) > 0 else '/',
+                'apres': programmeApres[len(programmeApres)-1].message if len(programmeApres) > 0 else '/',
+                "ecran": pub.ecran,
+                "afficheur": "/",
+                "panneau": "/",
+                "adresse": "/",
+                "wilaya": "/",
+                "apc": "/",
+                "typeachat": "achat classic",
+                "periodicite": "quotidienne",
+                "mois": "",
+                "datedebut": "",
+                "datefin": "",
+                "nbjour": "",
+                "langue": "",
+                'tarifbrut': (((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*(tarif[0].prix*ind))/30) if tarif != '' else '/',
+                'tarifsec': tarif[0].prix if tarif != ''else '/'
+            })
+            index += 1
+        excel = sorted(excel, key=lambda d: d['date'])
+        excel = sorted(excel, key=lambda d: d['support'])
+
+        excel = sorted(excel, key=lambda d: d['media'])
+        response = sorted(response, key=lambda d: d['secteur'])
+
+        response = {
+            "excel": excel,
+            "response": response
+        }
+
+        return Response(response)
