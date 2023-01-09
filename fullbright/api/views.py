@@ -543,7 +543,7 @@ class AnnonceurView(generics.ListCreateAPIView):
 
 class GetAnnonceurs(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = Annonceur.objects.all()
+    queryset = Annonceur.objects.all().order_by("Nom")
     serializer_class = AnnonceurSerializer
 
 
@@ -662,6 +662,12 @@ class SecteurDetail(generics.RetrieveUpdateDestroyAPIView):
 ############################################################
 
 
+class GetMarques(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Marque.objects.all().order_by("Nom")
+    serializer_class = MarqueSerializer
+
+
 class MarqueView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & AnnonceurPermissions]
     serializer_class = MarqueSerializer
@@ -709,6 +715,12 @@ class MarqueSearchContract(generics.ListCreateAPIView):
         nomAnn = self.request.query_params.get('NomAnnonceur')
         queryset = Marque.objects.filter(NomAnnonceur__in=nomAnn)
         return queryset
+
+
+class GetProduits(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Produit.objects.all().order_by("Nom")
+    serializer_class = ProduitSerializer
 
 
 class ProduitView(generics.ListCreateAPIView):
@@ -846,7 +858,8 @@ class MarqueFilterForContract(generics.ListAPIView):
 
     def get_queryset(self):
         NomAnnonceur = self.request.query_params.getlist('NomAnnonceur[]')
-        queryset = Marque.objects.filter(NomAnnonceur__in=NomAnnonceur)
+        queryset = Marque.objects.filter(
+            NomAnnonceur__in=NomAnnonceur).order_by("Nom")
         return queryset
 
 
@@ -866,7 +879,8 @@ class ProduitFilterForContract(generics.ListAPIView):
 
     def get_queryset(self):
         NomMarque = self.request.query_params.getlist('NomMarque[]')
-        queryset = Produit.objects.filter(NomMarque__in=NomMarque)
+        queryset = Produit.objects.filter(
+            NomMarque__in=NomMarque).order_by("Nom")
         return queryset
 
 
@@ -971,13 +985,13 @@ class ArticleClientView(generics.ListAPIView):
                 queryset = qs.filter(
                     type=type,
                     accroche__icontains=accroche,
-                    language__icontains=langue,
+                    edition__journal__langue__icontains=langue,
                     confirmed=True
                 )
             else:
                 queryset = qs.filter(
                     accroche__icontains=accroche,
-                    language__icontains=langue,
+                    edition__journal__langue__icontains=langue,
                     confirmed=True
                 )
             if(annonceur1):
@@ -997,9 +1011,9 @@ class ArticleClientView(generics.ListAPIView):
             for abonnement in self.request.user.abonnement_set.all():
                 if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'J':
                     for contract in abonnement.contract_set.all():
-                        articles = articles | queryset.filter(date_creation__range=(datetime.strptime(
+                        articles = articles | queryset.filter(edition__date__range=(datetime.strptime(
                             start, '%Y-%m-%d'), datetime.strptime(end, '%Y-%m-%d'))).filter(
-                            date_creation__range=(contract.date_debut, contract.date_fin))
+                            edition__date__range=(contract.date_debut, contract.date_fin))
             articles = articles.filter(edition=edition)
 
             return articles
@@ -1563,7 +1577,8 @@ class RecherchePublicite(generics.ListAPIView):
                     result.append(item)
 
         if type == '1':
-            queryset = Publicite.objects.filter(message__icontains=msg)
+            queryset = Publicite.objects.filter(
+                message__icontains=msg).order_by("-id")
 
             for item in queryset:
                 if item.message not in msgs:
@@ -1995,7 +2010,7 @@ class PostPubliciteRadioView(generics.ListCreateAPIView):
         code = date.today().strftime("%d%m%Y") + "-" + "RD" + "-" + \
             "{0:0=3d}".format(count+1) + "-" + data['language']
         data['code'] = code
-        data['confirmed'] = False
+        data['confirmed'] = True
         serializer = PubliciteRadioSerializer(data=data)
         if serializer.is_valid():
             serializer.save()

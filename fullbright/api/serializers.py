@@ -6,7 +6,7 @@ from django.db.models.aggregates import Count, Sum
 class JournalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Journal
-        fields = ['id', 'nomJournal', 'image','langue']
+        fields = ['id', 'nomJournal', 'image', 'langue']
 
 
 class EditionSerializer(serializers.ModelSerializer):
@@ -494,6 +494,7 @@ class PubliciteSerializer(serializers.ModelSerializer):
     nom_marque = serializers.SerializerMethodField()
     nom_annonceur = serializers.SerializerMethodField()
     nom_chaine = serializers.SerializerMethodField()
+    date = serializers.SerializerMethodField()
 
     nom_segment = serializers.SerializerMethodField()
     nom_marche = serializers.SerializerMethodField()
@@ -542,9 +543,15 @@ class PubliciteSerializer(serializers.ModelSerializer):
         else:
             return ""
 
+    def get_date(self, obj):
+        if obj.jour.date:
+            return obj.jour.date
+        else:
+            return ""
+
     class Meta:
         model = Publicite
-        fields = ['id', 'code', 'debut', 'fin', "language", "message", "rang", "encombrement", 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
+        fields = ['id', "date", 'code', 'debut', 'fin', "language", "message", "rang", "encombrement", 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "ecran", 'annonceur', 'marque', "produit", 'segment', 'marche', 'famille', 'secteur', "video",
                   "confirmed", "jour", "nom_annonceur", "nom_marque", "nom_produit", "nom_chaine"]
 

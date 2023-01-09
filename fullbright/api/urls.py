@@ -87,6 +87,7 @@ urlpatterns = [
 
 
     path('marque/', MarqueView.as_view()),
+    path('getmarques/', GetMarques.as_view()),
     path('marque/<int:pk>/', MarqueDetail.as_view()),
     path('marque/exists/', MarqueExiste.as_view()),
     path('marque/contract', MarqueSearchContract.as_view()),
@@ -96,6 +97,7 @@ urlpatterns = [
 
 
     path('produit/', ProduitView.as_view()),
+    path('getproduits/', GetProduits.as_view()),
     path('produit/exists/', ProduitExiste.as_view()),
     path('produit/<int:pk>/', ProduitDetail.as_view()),
     path('produit/filter', ProduitFilter.as_view()),
@@ -198,7 +200,7 @@ urlpatterns = [
     path('pigesfinale/', PigeFinaleView.as_view()),
     path('pigesfinaleadmin/', PigeFinaleAdminView.as_view()),
 
-    
+
     path('recherchegenerale/', RechercheGenerale.as_view()),
 
 
