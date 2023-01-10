@@ -232,8 +232,7 @@ class PostArticleView(generics.ListCreateAPIView):
         # set to mutable
         data._mutable = True
         print("data['type']  = ", data['type'])
-        if(data['type'] == '0'):
-            data['image'] = None
+
         # set mutable flag back
         data['code'] = code
         data['confirmed'] = True
