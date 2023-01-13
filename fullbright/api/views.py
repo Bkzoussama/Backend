@@ -2961,7 +2961,6 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
             })
             i += 1
         response = sorted(response, key=lambda d: d['date'])
-        response
 
         return Response(sorted(response, key=lambda d: d['media']))
 
