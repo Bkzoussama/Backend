@@ -2747,6 +2747,28 @@ class PigeFinaleView(generics.ListAPIView):
             return Response(sorted(response, key=lambda d: d['media']))
 
 
+class PigeFinaleAdminSizeView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        debut = request.query_params.get('debut'),
+        date_fin = request.query_params.get('date_fin')
+        full = request.query_params.get('full')
+
+        qs = Publicite.objects.all()
+        queryset = qs.filter(
+            confirmed=True
+        )
+        videos = Publicite.objects.none()
+
+        jours = Jour.objects.filter(date__range=(
+            debut[0], date_fin))
+        videos = videos | queryset.filter(jour__in=jours)
+
+        response = int(len(videos))
+        return Response(response)
+
+
 class PigeFinaleAdminArticleView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -2765,12 +2787,15 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
             debut[0], date_fin))
         videos = videos | queryset.filter(jour__in=jours)
 
-        print(int(len(videos)/2))
-
-        if full == True:
-            videos = videos[int(len(videos)/2):]
+        size = int(full) * 1000
+        st = 0
+        if size-1000 < 0:
+            st = 0
         else:
-            videos = videos[:int(len(videos)/2)]
+            st = size-1000
+        if size >= len(videos):
+            size = len(videos)
+        videos = videos[st:size]
 
         response = []
         i = 0
