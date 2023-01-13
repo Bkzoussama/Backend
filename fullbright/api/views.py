@@ -2753,6 +2753,7 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
     def get(self, request):
         debut = request.query_params.get('debut'),
         date_fin = request.query_params.get('date_fin')
+        full = request.query_params.get('full')
 
         qs = Publicite.objects.all()
         queryset = qs.filter(
@@ -2763,6 +2764,13 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
         jours = Jour.objects.filter(date__range=(
             debut[0], date_fin))
         videos = videos | queryset.filter(jour__in=jours)
+
+        if full == True:
+            videos = videos[len(videos)/2:]
+        else:
+            videos = videos[:len(videos)/2]
+
+
 
         response = []
         i = 0
