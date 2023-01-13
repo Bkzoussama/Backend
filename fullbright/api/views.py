@@ -2957,7 +2957,6 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
         return Response(sorted(response, key=lambda d: d['media']))
 
 
-
 class PigeFinaleAdminView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -2975,8 +2974,8 @@ class PigeFinaleAdminView(generics.ListAPIView):
         #     debut[0], date_fin))
         # videos = videos | queryset.filter(jour__in=jours)
 
-        # response = []
-        # i = 0
+        response = []
+        i = 0
         # for pub in videos:
         #     tarifs = TarifChaine.objects.filter(chaine=pub.jour.chaine)
         #     indices = Indice.objects.filter(
