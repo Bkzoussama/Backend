@@ -231,7 +231,6 @@ class PostArticleView(generics.ListCreateAPIView):
 
         # set to mutable
         data._mutable = True
-        print("data['type']  = ", data['type'])
 
         # set mutable flag back
         data['code'] = code
@@ -293,6 +292,10 @@ class SearchFilter(generics.ListAPIView):
     pagination_class = MyPagination
 
     def get_queryset(self):
+        langue = self.request.query_params.get('langue')
+        debut = self.request.query_params.get('debut')
+        fin = self.request.query_params.get('fin')
+
         accroche = self.request.query_params.get('accroche')
         annonceur = self.request.query_params.get('annonceur')
         marque = self.request.query_params.get('marque')
@@ -302,7 +305,8 @@ class SearchFilter(generics.ListAPIView):
 
         if(annonceur and not marque and not produit):
             queryset = Article.objects.filter(
-                # accroche__icontains=accroche,
+                accroche__icontains=accroche,
+                edition__journal__langue__icontains=langue,
                 annonceur=annonceur,
                 edition=edition,
                 type=type,
@@ -311,7 +315,9 @@ class SearchFilter(generics.ListAPIView):
 
         elif(annonceur and marque and not produit):
             queryset = Article.objects.filter(
-                # accroche__icontains=accroche,
+                edition__journal__langue__icontains=langue,
+
+                accroche__icontains=accroche,
                 annonceur=annonceur,
                 marque=marque,
                 edition=edition,
@@ -321,7 +327,9 @@ class SearchFilter(generics.ListAPIView):
             )
         elif(annonceur and marque and produit):
             queryset = Article.objects.filter(
-                # accroche__icontains=accroche,
+                edition__journal__langue__icontains=langue,
+
+                accroche__icontains=accroche,
                 annonceur=annonceur,
                 marque=marque,
                 produit=produit,
@@ -332,10 +340,19 @@ class SearchFilter(generics.ListAPIView):
             )
         elif(not annonceur and not marque and not produit):
             queryset = Article.objects.filter(
-                # accroche__icontains=accroche,
+                edition__journal__langue__icontains=langue,
+
+                accroche__icontains=accroche,
                 edition=edition,
                 type=type,
                 confirmed=True)
+
+        if(debut != None and fin != None):
+            queryset = Article.objects.filter(
+
+                edition__date__range=(datetime.strptime(
+                    debut, '%Y-%m-%d'), datetime.strptime(fin, '%Y-%m-%d')),
+            )
 
         return queryset
 
@@ -1221,7 +1238,7 @@ class PubliciteLinkClient(generics.ListAPIView):
                                         qs = qs | marque.publicite_set.all()
                             else:
                                 qs = qs | annonceur.publicite_set.all()
-            print(len(qs))
+            #print(len(qs))
             return qs.filter(id=id)
 
 
@@ -2251,9 +2268,9 @@ class PigeFinaleView(generics.ListAPIView):
     def get(self, request):
         debut = request.query_params.get('debut'),
         date_fin = request.query_params.get('date_fin')
-        print("**************************")
-        print(debut[0])
-        print(date_fin)
+        # print("**************************")
+        # print(debut[0])
+        # print(date_fin)
 
         # date = debut[0]
 
@@ -2262,9 +2279,9 @@ class PigeFinaleView(generics.ListAPIView):
         # if(len(date_fin) < 10):
         #     date_fin = date_fin[:5]+"0"+date_fin[5:]
 
-        print(debut)
-        print(date_fin)
-        print("**************************")
+        # print(debut)
+        # print(date_fin)
+        # print("**************************")
 
         if self.request.user.is_client == True:
 
@@ -2644,13 +2661,11 @@ class PigeFinaleView(generics.ListAPIView):
                                             produit=None)
                                     else:
                                         qs = qs | marque.article_set.all()
-                                        print("marque")
                                 qs = qs | annonceur.article_set.filter(
                                     marque=None)
 
                             else:
                                 qs = qs | annonceur.article_set.all()
-                                print("annonceur")
 
             queryset = qs.filter(
                 confirmed=True
@@ -2738,11 +2753,7 @@ class PigeFinaleAdminView(generics.ListAPIView):
     def get(self, request):
         debut = request.query_params.get('debut'),
         date_fin = request.query_params.get('date_fin')
-        print("**************************")
-        print(debut)
-        print(date_fin)
-
-        print("**************************")
+       
 
         qs = Publicite.objects.all()
         queryset = qs.filter(
@@ -3146,13 +3157,11 @@ class RechercheGenerale(generics.ListAPIView):
                                         produit=None)
                                 else:
                                     qs = qs | marque.article_set.all()
-                                    print("marque")
                             qs = qs | annonceur.article_set.filter(
                                 marque=None)
 
                         else:
                             qs = qs | annonceur.article_set.all()
-                            print("annonceur")
 
         queryset = qs.filter(
             confirmed=True
@@ -3165,7 +3174,6 @@ class RechercheGenerale(generics.ListAPIView):
                         items = items | queryset.filter(
                             edition__date__range=(contract.date_debut, contract.date_fin))
 
-        print(accroche, secteurReq)
         if secteurReq[0]:
             secteurReq = Secteur.objects.filter(id=int(secteurReq[0]))
         else:
