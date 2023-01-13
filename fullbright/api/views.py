@@ -2765,12 +2765,12 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
             debut[0], date_fin))
         videos = videos | queryset.filter(jour__in=jours)
 
+        print(int(len(videos)/2))
+
         if full == True:
-            videos = videos[len(videos)/2:]
+            videos = videos[int(len(videos)/2):]
         else:
-            videos = videos[:len(videos)/2]
-
-
+            videos = videos[:int(len(videos)/2)]
 
         response = []
         i = 0
@@ -2961,6 +2961,7 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
             })
             i += 1
         response = sorted(response, key=lambda d: d['date'])
+        response
 
         return Response(sorted(response, key=lambda d: d['media']))
 
