@@ -1238,7 +1238,7 @@ class PubliciteLinkClient(generics.ListAPIView):
                                         qs = qs | marque.publicite_set.all()
                             else:
                                 qs = qs | annonceur.publicite_set.all()
-            #print(len(qs))
+            # print(len(qs))
             return qs.filter(id=id)
 
 
@@ -2747,13 +2747,12 @@ class PigeFinaleView(generics.ListAPIView):
             return Response(sorted(response, key=lambda d: d['media']))
 
 
-class PigeFinaleAdminView(generics.ListAPIView):
+class PigeFinaleAdminArticleView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         debut = request.query_params.get('debut'),
         date_fin = request.query_params.get('date_fin')
-       
 
         qs = Publicite.objects.all()
         queryset = qs.filter(
@@ -2861,7 +2860,6 @@ class PigeFinaleAdminView(generics.ListAPIView):
         response = sorted(response, key=lambda d: d['date'])
         response = sorted(response, key=lambda d: d['support'])
 
-        # Radio
         qs = PubliciteRadio.objects.all()
 
         queryset = qs.filter(
@@ -2955,6 +2953,218 @@ class PigeFinaleAdminView(generics.ListAPIView):
             })
             i += 1
         response = sorted(response, key=lambda d: d['date'])
+
+        return Response(sorted(response, key=lambda d: d['media']))
+
+
+
+class PigeFinaleAdminView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        debut = request.query_params.get('debut'),
+        date_fin = request.query_params.get('date_fin')
+
+        # qs = Publicite.objects.all()
+        # queryset = qs.filter(
+        #     confirmed=True
+        # )
+        # videos = Publicite.objects.none()
+
+        # jours = Jour.objects.filter(date__range=(
+        #     debut[0], date_fin))
+        # videos = videos | queryset.filter(jour__in=jours)
+
+        # response = []
+        # i = 0
+        # for pub in videos:
+        #     tarifs = TarifChaine.objects.filter(chaine=pub.jour.chaine)
+        #     indices = Indice.objects.filter(
+        #         chaine=pub.jour.chaine).order_by("-indice")
+
+        #     tarif = tarifs.filter(debut__lte=pub.debut, fin__gte=pub.debut)
+
+        #     duree = datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) if datetime.combine(date.today(), pub.fin) - datetime.combine(
+        #         date.today(), pub.debut) >= timedelta(seconds=1) else datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) + timedelta(hours=24)
+        #     indice = indices.filter(duree__lte=duree.total_seconds())
+        #     ind = 1
+
+        #     if len(indice) > 0:
+        #         ind = indice[len(indice)-1].indice/100
+
+        #     if(len(tarif) < 1):
+        #         tarif = ""
+
+        #     programmeAvant = Programme.objects.filter(
+        #         jour=pub.jour, fin__lte=pub.debut)
+        #     programmeApres = Programme.objects.filter(
+        #         jour=pub.jour, debut__gte=pub.fin)
+
+        #     if(len(programmeAvant) < 1):
+        #         programmeAvant = Publicite.objects.filter(
+        #             jour=pub.jour, fin__lte=pub.debut)
+        #     if(len(programmeApres) < 1):
+        #         programmeApres = Publicite.objects.filter(
+        #             jour=pub.jour, debut__gte=pub.fin)
+
+        #     marque = '/'
+        #     produit = '/'
+        #     segment = '/'
+        #     marche = '/'
+        #     famille = '/'
+        #     secteur = '/'
+
+        #     if(pub.marque):
+        #         marque = pub.marque.Nom
+
+        #     if(pub.produit):
+        #         produit = pub.produit.Nom
+
+        #     if(pub.segment):
+        #         segment = pub.segment.Nom
+
+        #     if(pub.marche):
+        #         marche = pub.marche.Nom
+
+        #     if(pub.famille):
+        #         famille = pub.famille.Nom
+
+        #     if(pub.secteur):
+        #         secteur = pub.secteur.Nom
+
+        #     response.append({
+        #         "id": i,
+        #         'media': 'TV',
+        #         'date': pub.jour.date,
+        #         'support': pub.jour.chaine.nom,
+        #         "debut": pub.debut,
+        #         "duree": duree,
+        #         "couleur": '/',
+        #         "code": pub.code,
+        #         "message": pub.message,
+        #         "annonceur": pub.annonceur.Nom,
+        #         "marque": marque,
+        #         "produit": produit,
+        #         "segment": segment,
+        #         "marche": marche,
+        #         "famille": famille,
+        #         "secteur": secteur,
+        #         "avant": programmeAvant[0].message if len(programmeAvant) > 0 else '/',
+        #         'apres': programmeApres[len(programmeApres)-1].message if len(programmeApres) > 0 else '/',
+        #         "ecran": pub.ecran,
+        #         "afficheur": "/",
+        #         "panneau": "/",
+        #         "adresse": "/",
+        #         "wilaya": "/",
+        #         "apc": "/",
+        #         "typeachat": "achat classic",
+        #         "periodicite": "quotidienne",
+        #         "mois": "",
+        #         "datedebut": "",
+        #         "datefin": "",
+        #         "nbjour": "",
+        #         "langue": "",
+        #         'tarifbrut': (((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*(tarif[0].prix*ind))/30) if tarif != '' else '/',
+        #         'tarifsec': tarif[0].prix if tarif != ''else '/'
+        #     })
+        #     i += 1
+        # response = sorted(response, key=lambda d: d['date'])
+        # response = sorted(response, key=lambda d: d['support'])
+
+        # Radio
+        # qs = PubliciteRadio.objects.all()
+
+        # queryset = qs.filter(
+        #     confirmed=True
+        # )
+        # videos = Publicite.objects.none()
+
+        # jours = JourRadio.objects.filter(date__range=(
+        #     debut[0], date_fin))
+        # videos = videos | queryset.filter(jour__in=jours)
+
+        # for pub in videos:
+        #     tarifs = TarifRadio.objects.filter(radio=pub.jour.radio)
+
+        #     tarif = tarifs.filter(debut__lte=pub.debut, fin__gte=pub.debut)
+
+        #     if(len(tarif) < 1):
+        #         tarif = ""
+
+        #     programmeAvant = ProgrammeRadio.objects.filter(
+        #         jour=pub.jour, fin__lte=pub.debut)
+        #     programmeApres = ProgrammeRadio.objects.filter(
+        #         jour=pub.jour, debut__gte=pub.fin)
+
+        #     if(len(programmeAvant) < 1):
+        #         programmeAvant = PubliciteRadio.objects.filter(
+        #             jour=pub.jour, fin__lte=pub.debut)
+        #     if(len(programmeApres) < 1):
+        #         programmeApres = PubliciteRadio.objects.filter(
+        #             jour=pub.jour, debut__gte=pub.fin)
+
+        #     marque = '/'
+        #     produit = '/'
+        #     segment = '/'
+        #     marche = '/'
+        #     famille = '/'
+        #     secteur = '/'
+
+        #     if(pub.marque):
+        #         marque = pub.marque.Nom
+
+        #     if(pub.produit):
+        #         produit = pub.produit.Nom
+
+        #     if(pub.segment):
+        #         segment = pub.segment.Nom
+
+        #     if(pub.marche):
+        #         marche = pub.marche.Nom
+
+        #     if(pub.famille):
+        #         famille = pub.famille.Nom
+
+        #     if(pub.secteur):
+        #         secteur = pub.secteur.Nom
+
+        #     response.append({
+        #         "id": i,
+        #         'media': 'RD',
+        #         'date': pub.jour.date,
+        #         'support': pub.jour.radio.nom,
+        #         "debut": pub.debut,
+        #         "duree": datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) if datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) >= timedelta(seconds=1) else datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut) + timedelta(hours=24),
+        #         "couleur": '/',
+        #         "code": pub.code,
+        #         "message": pub.message,
+        #         "annonceur": pub.annonceur.Nom,
+        #         "marque": marque,
+        #         "produit": produit,
+        #         "segment": segment,
+        #         "marche": marche,
+        #         "famille": famille,
+        #         "secteur": secteur,
+        #         "avant": programmeAvant[0].message if len(programmeAvant) > 0 else '/',
+        #         'apres': programmeApres[len(programmeApres)-1].message if len(programmeApres) > 0 else '/',
+        #         "ecran": pub.ecran,
+        #         "afficheur": '/',
+        #         "panneau": '/',
+        #         "adresse": '/',
+        #         "wilaya": '/',
+        #         "apc": '/',
+        #         "typeachat": "achat classic",
+        #         "periodicite": "quotidienne",
+        #         "mois": "",
+        #         "datedebut": "",
+        #         "datefin": "",
+        #         "nbjour": "",
+        #         "langue": "",
+        #         'tarifbrut': ((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*tarif[0].prix/30) if tarif != '' else '/',
+        #         'tarifsec': tarif[0].prix if tarif != ''else '/'
+        #     })
+        #     i += 1
+        # response = sorted(response, key=lambda d: d['date'])
 
         # "# Afficheur
         qs = Pub.objects.all()
