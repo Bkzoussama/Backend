@@ -1286,7 +1286,7 @@ class PubliciteLinkClient(generics.ListAPIView):
                                         qs = qs | marque.publicite_set.all()
                             else:
                                 qs = qs | annonceur.publicite_set.all()
-            
+
             return qs.filter(id=id)
 
 
@@ -2316,7 +2316,6 @@ class PigeFinaleView(generics.ListAPIView):
     def get(self, request):
         debut = request.query_params.get('debut'),
         date_fin = request.query_params.get('date_fin')
-        
 
         if self.request.user.is_client == True:
 
@@ -2444,7 +2443,7 @@ class PigeFinaleView(generics.ListAPIView):
                     "datefin": "/",
                     "nbjour": "/",
                     "langue": "/",
-                    'tarifbrut': (((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*(tarif[0].prix*ind))/30) if tarif != '' else '/',
+                    'tarifbrut': ((duree*(tarif[0].prix*ind))/30) if tarif != '' else '/',
                     'tarifsec': tarif[0].prix if tarif != ''else '/'
                 })
                 i += 1
