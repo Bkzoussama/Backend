@@ -2411,10 +2411,11 @@ class PigeFinaleView(generics.ListAPIView):
                 if(pub.secteur):
                     secteur = pub.secteur.Nom
 
-                brut = ((duree*(tarif[0].prix*ind))/30)
-
-                if ind == 0:
-                    brut = ((duree*(tarif[0].prix*1))/30)
+                brut = 1000
+                if tarif != '':
+                    brut = ((duree*(tarif[0].prix*ind))/30)
+                    if ind == 0:
+                        brut = ((duree*(tarif[0].prix*1))/30)
 
                 response.append({
                     "id": i,
