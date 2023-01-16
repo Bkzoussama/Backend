@@ -2411,6 +2411,11 @@ class PigeFinaleView(generics.ListAPIView):
                 if(pub.secteur):
                     secteur = pub.secteur.Nom
 
+                brut = ((duree*(tarif[0].prix*ind))/30)
+
+                if ind == 0:
+                    brut = ((duree*(tarif[0].prix*1))/30)
+
                 response.append({
                     "id": i,
                     'media': 'TV',
@@ -2443,7 +2448,7 @@ class PigeFinaleView(generics.ListAPIView):
                     "datefin": "/",
                     "nbjour": "/",
                     "langue": "/",
-                    'tarifbrut': ((duree*(tarif[0].prix*ind))/30) if tarif != '' else '/',
+                    'tarifbrut': brut if tarif != '' else '/',
                     'tarifsec': tarif[0].prix if tarif != ''else '/'
                 })
                 i += 1

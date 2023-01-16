@@ -28,6 +28,10 @@ class ArticleClientSerializer(serializers.ModelSerializer):
     numEdition = serializers.SerializerMethodField()
     dateEdition = serializers.SerializerMethodField()
     nomJournal = serializers.SerializerMethodField()
+    language = serializers.SerializerMethodField()
+
+    def get_language(self, obj):
+        return obj.edition.journal.langue
 
     def get_numEdition(self, obj):
         return obj.edition.numero
@@ -79,7 +83,7 @@ class ArticleClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'taille',"edition", "accroche", "couleur", "num_page", "type",
+        fields = ['id', 'taille',"language", "edition", "accroche", "couleur", "num_page", "type",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
@@ -99,6 +103,11 @@ class ArticleSerializer(serializers.ModelSerializer):
     dateEdition = serializers.SerializerMethodField()
     nomJournal = serializers.SerializerMethodField()
 
+    language = serializers.SerializerMethodField()
+
+    def get_language(self, obj):
+        return obj.edition.journal.langue
+
     def get_numEdition(self, obj):
         return obj.edition.numero
 
@@ -149,7 +158,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id','taille', 'code', 'type', "edition", "accroche", "couleur", "num_page",
+        fields = ['id', 'taille', 'language','code', 'type', "edition", "accroche", "couleur", "num_page",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", 'segment', 'marche', 'famille', 'secteur', "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'confirmed', 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
@@ -431,6 +440,11 @@ class ClientArticleSerializer(serializers.ModelSerializer):
     dateEdition = serializers.SerializerMethodField()
     nomJournal = serializers.SerializerMethodField()
 
+    language = serializers.SerializerMethodField()
+
+    def get_language(self, obj):
+        return obj.edition.journal.langue
+
     def get_numEdition(self, obj):
         return obj.edition.numero
 
@@ -442,7 +456,7 @@ class ClientArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'taille', 'date_creation', "edition", "accroche", "type"
+        fields = ['id', 'taille', 'language','date_creation', "edition", "accroche", "type"
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
                   "numEdition", "dateEdition", "nomJournal"]
 
