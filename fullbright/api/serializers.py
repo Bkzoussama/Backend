@@ -79,7 +79,7 @@ class ArticleClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', "edition", "accroche", "couleur", "num_page", "type",
+        fields = ['id', 'taille',"edition", "accroche", "couleur", "num_page", "type",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
@@ -149,7 +149,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'code', 'type', "edition", "accroche", "couleur", "num_page",
+        fields = ['id','taille', 'code', 'type', "edition", "accroche", "couleur", "num_page",
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", 'segment', 'marche', 'famille', 'secteur', "image",
                   "numEdition", "dateEdition", "nomJournal", "nom_annonceur", 'confirmed', 'nom_marche', 'nom_secteur', 'nom_famille', 'nom_segment',
                   "nom_marque", "nom_produit"]
@@ -442,7 +442,7 @@ class ClientArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'date_creation', "edition", "accroche", "type"
+        fields = ['id', 'taille', 'date_creation', "edition", "accroche", "type"
                   "page_suivante", "page_precedente", 'annonceur', 'marque', "produit", "image",
                   "numEdition", "dateEdition", "nomJournal"]
 

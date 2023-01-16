@@ -711,6 +711,54 @@ class MarqueExiste(APIView):
         return Response(bool)
 
 
+class MarqueInfo(APIView):
+    permission_classes = [IsAuthenticated & AnnonceurPermissions]
+
+    def get(self, request, format=None):
+        nom = self.request.query_params.get('marque')
+        qs = Publicite.objects.filter(marque=nom)
+
+        response = {}
+
+        if qs.exists():
+            qs = qs[0]
+
+            marque = ''
+            produit = ''
+            segment = ''
+            marche = ''
+            famille = ''
+            secteur = ''
+
+            if(qs.marque):
+                marque = qs.marque.id
+
+            if(qs.produit):
+                produit = qs.produit.id
+
+            if(qs.segment):
+                segment = qs.segment.id
+
+            if(qs.marche):
+                marche = qs.marche.id
+
+            if(qs.famille):
+                famille = qs.famille.id
+
+            if(qs.secteur):
+                secteur = qs.secteur.id
+
+            response = {
+                "annonceur": qs.annonceur.id,
+                "marque": marque,
+                "segment": segment,
+                "secteur": secteur,
+                "famille": famille,
+                "marche": marche,
+            }
+        return Response(response)
+
+
 class MarqueSearch(generics.ListAPIView):
     serializer_class = MarqueSerializer
 
@@ -1238,7 +1286,7 @@ class PubliciteLinkClient(generics.ListAPIView):
                                         qs = qs | marque.publicite_set.all()
                             else:
                                 qs = qs | annonceur.publicite_set.all()
-            # print(len(qs))
+            
             return qs.filter(id=id)
 
 
@@ -2268,20 +2316,7 @@ class PigeFinaleView(generics.ListAPIView):
     def get(self, request):
         debut = request.query_params.get('debut'),
         date_fin = request.query_params.get('date_fin')
-        # print("**************************")
-        # print(debut[0])
-        # print(date_fin)
-
-        # date = debut[0]
-
-        # if(debut[0].day == 0):
-        #     debut[0].day = debut[0].day + 1
-        # if(len(date_fin) < 10):
-        #     date_fin = date_fin[:5]+"0"+date_fin[5:]
-
-        # print(debut)
-        # print(date_fin)
-        # print("**************************")
+        
 
         if self.request.user.is_client == True:
 
@@ -2404,15 +2439,16 @@ class PigeFinaleView(generics.ListAPIView):
                     "apc": "/",
                     "typeachat": "achat classic",
                     "periodicite": "quotidienne",
-                    "mois": "",
-                    "datedebut": "",
-                    "datefin": "",
-                    "nbjour": "",
-                    "langue": "",
+                    "mois": "/",
+                    "datedebut": "/",
+                    "datefin": "/",
+                    "nbjour": "/",
+                    "langue": "/",
                     'tarifbrut': (((datetime.combine(date.today(), pub.fin) - datetime.combine(date.today(), pub.debut))*(tarif[0].prix*ind))/30) if tarif != '' else '/',
                     'tarifsec': tarif[0].prix if tarif != ''else '/'
                 })
                 i += 1
+            response = sorted(response, key=lambda d: d['debut'])
             response = sorted(response, key=lambda d: d['date'])
             response = sorted(response, key=lambda d: d['support'])
 
@@ -2644,6 +2680,7 @@ class PigeFinaleView(generics.ListAPIView):
                     'tarifsec': '/',
                 })
                 i += 1
+            response = sorted(response, key=lambda d: d['date'])
 
             # "# Article
             qs = Article.objects.none()

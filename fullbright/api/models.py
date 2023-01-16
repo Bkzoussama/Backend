@@ -33,6 +33,15 @@ class Edition(models.Model):
 
 
 class Article(models.Model):
+    tailles = (
+        ("Page complete", "Page complete"),
+        ("Demi page", "Demi page"),
+        ("1/4 de page", "1/4 de page"),
+        ("1/8 de page", "1/8 de page"),
+        ("Bondo", "Bondo"),
+        ("Oreiller", "Oreiller"),
+
+    )
 
     annonceur = models.ForeignKey(
         'Annonceur', on_delete=models.CASCADE)
@@ -50,6 +59,8 @@ class Article(models.Model):
         'Secteur', on_delete=models.CASCADE, null=True, blank=True)
 
     type = models.BooleanField(default=False)
+
+    taille = models.CharField(max_length=15, default="", choices=tailles)
 
     image = models.ImageField(upload_to="media",  default="", null=True)
 

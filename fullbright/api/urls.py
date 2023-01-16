@@ -89,6 +89,7 @@ urlpatterns = [
     path('marque/', MarqueView.as_view()),
     path('getmarques/', GetMarques.as_view()),
     path('marque/<int:pk>/', MarqueDetail.as_view()),
+    path('marque/info/', MarqueInfo.as_view()),
     path('marque/exists/', MarqueExiste.as_view()),
     path('marque/contract', MarqueSearchContract.as_view()),
     path('marque/filter', MarqueFilter.as_view()),
