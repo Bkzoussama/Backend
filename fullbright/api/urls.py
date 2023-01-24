@@ -199,6 +199,11 @@ urlpatterns = [
     path('tarifradio/<int:pk>/', TarifRadioDetail.as_view()),
 
     path('pigesfinale/', PigeFinaleView.as_view()),
+    path('pigesfinalesize/', PigeFinaleSizeView.as_view()),
+    path('pigesfinalepublicite/', PigeFinalePubliciteView.as_view()),
+
+
+
     path('pigesfinaleadmin/', PigeFinaleAdminView.as_view()),
     path('pigesfinaleadminarticle/', PigeFinaleAdminArticleView.as_view()),
     path('pigesfinaleadminsize/', PigeFinaleAdminSizeView.as_view()),

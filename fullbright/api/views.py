@@ -2310,7 +2310,7 @@ class GetTarifRadioView(generics.ListCreateAPIView):
         return queryset
 
 
-class PigeFinaleView(generics.ListAPIView):
+class PigeFinaleSizeView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -2353,9 +2353,66 @@ class PigeFinaleView(generics.ListAPIView):
                             jours = Jour.objects.filter(date__range=(
                                 debut[0], date_fin))
                             videos = videos | queryset.filter(jour__in=jours)
+        return Response(len(videos))
+
+
+class PigeFinalePubliciteView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        debut = request.query_params.get('debut'),
+        date_fin = request.query_params.get('date_fin')
+        full = request.query_params.get('full')
+
+        if self.request.user.is_client == True:
+
+            qs = Publicite.objects.none()
+
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == "C":
+                    for contract in abonnement.contract_set.all():
+                        for annonceur in contract.annonceurs.all():
+                            if contract.marques.filter(NomAnnonceur=annonceur).exists():
+                                for marque in contract.marques.filter(NomAnnonceur=annonceur):
+                                    if contract.produits.filter(NomMarque=marque).exists():
+                                        for produit in contract.produits.filter(NomMarque=marque):
+
+                                            qs = qs | produit.publicite_set.all()
+                                        qs = qs | marque.publicite_set.filter(
+                                            produit=None)
+                                    else:
+                                        qs = qs | marque.publicite_set.all()
+
+                                qs = qs | annonceur.publicite_set.filter(
+                                    marque=None)
+
+                            else:
+                                qs = qs | annonceur.publicite_set.all()
+
+            queryset = qs.filter(
+                confirmed=True
+            )
+            videos = Publicite.objects.none()
+            for abonnement in self.request.user.abonnement_set.all():
+                if timezone.now().date() <= abonnement.date_fin and abonnement.service == 'C':
+                    for contract in abonnement.contract_set.all():
+                        if timezone.now().date() >= contract.date_debut and timezone.now().date() <= contract.date_fin:
+                            jours = Jour.objects.filter(date__range=(
+                                debut[0], date_fin))
+                            videos = videos | queryset.filter(jour__in=jours)
+
+            size = int(full) * 1000
+            st = 0
+            if size-1000 < 0:
+                st = 0
+            else:
+                st = size-1000
+            if size >= len(videos):
+                size = len(videos)
+            videos = videos[st:size]
 
             response = []
-            i = 0
+            i = st
             for pub in videos:
                 tarifs = TarifChaine.objects.filter(chaine=pub.jour.chaine)
                 indices = Indice.objects.filter(
@@ -2456,6 +2513,20 @@ class PigeFinaleView(generics.ListAPIView):
             response = sorted(response, key=lambda d: d['debut'])
             response = sorted(response, key=lambda d: d['date'])
             response = sorted(response, key=lambda d: d['support'])
+        return Response(sorted(response, key=lambda d: d['media']))
+
+
+class PigeFinaleView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        debut = request.query_params.get('debut'),
+        date_fin = request.query_params.get('date_fin')
+
+        if self.request.user.is_client == True:
+
+            response = []
+            i = 10000
 
             # Radio
             qs = PubliciteRadio.objects.none()
@@ -2840,7 +2911,7 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
         videos = videos[st:size]
 
         response = []
-        i = 0
+        i = st
         for pub in videos:
             tarifs = TarifChaine.objects.filter(chaine=pub.jour.chaine)
             indices = Indice.objects.filter(
