@@ -3320,7 +3320,7 @@ class PigeFinaleAdminView(generics.ListAPIView):
         videos = Pub.objects.none()
 
         videos = videos | queryset.filter(
-            date_creation__range=(debut[0], date_fin))
+            jour__date__range=(debut[0], date_fin))
 
         for pub in videos:
 
@@ -3365,7 +3365,7 @@ class PigeFinaleAdminView(generics.ListAPIView):
             response.append({
                 "id": i,
                 'media': 'AF',
-                'date': pub.date_creation,
+                'date': pub.jour.date,
                 'support': '/',
                 "debut": '/',
                 "duree": '/',
