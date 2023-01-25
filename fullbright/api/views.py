@@ -3003,6 +3003,7 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
                 'tarifsec': tarif[0].prix if tarif != ''else '/'
             })
             i += 1
+        response = sorted(response, key=lambda d: d['debut'])
         response = sorted(response, key=lambda d: d['date'])
         response = sorted(response, key=lambda d: d['support'])
 
