@@ -2431,17 +2431,44 @@ class PigeFinalePubliciteView(generics.ListAPIView):
                 if(len(tarif) < 1):
                     tarif = ""
 
-                programmeAvant = Programme.objects.filter(
-                    jour=pub.jour, fin__lte=pub.debut)
-                programmeApres = Programme.objects.filter(
-                    jour=pub.jour, debut__gte=pub.fin)
+                publicite = Publicite.objects.filter(
+                    jour=pub.jour, confirmed=True)
+                programme = Programme.objects.filter(jour=pub.jour)
+                progs = []
+                i = 0
+                for prog1 in programme:
+                    progs.append({
+                        "idd": prog1.id,
+                        "message": prog1.message,
+                        "debut": prog1.debut,
+                        "fin": prog1.fin,
+                    })
+                    i += 1
+                for pub1 in publicite:
+                    progs.append({
+                        "idd": pub1.id,
+                        "message": pub1.message,
+                        "debut": pub1.debut,
+                        "fin": pub1.fin,
+                    })
+                    i += 1
+                progs = sorted(progs, key=lambda d: d['debut'])
 
-                if(len(programmeAvant) < 1):
-                    programmeAvant = Publicite.objects.filter(
-                        jour=pub.jour, fin__lte=pub.debut)
-                if(len(programmeApres) < 1):
-                    programmeApres = Publicite.objects.filter(
-                        jour=pub.jour, debut__gte=pub.fin)
+                pubindex = progs.index({
+                    "idd": pub.id,
+                    "message": pub.message,
+                    "debut": pub.debut,
+                    "fin": pub.fin,
+                })
+
+                programmeAvant = ""
+                programmeApres = ""
+
+                if 0 <= pubindex-1:
+                    programmeAvant = progs[pubindex-1]["message"]
+                if len(progs) > pubindex+1:
+                    programmeApres = progs[pubindex+1]["message"]
+
 
                 marque = '/'
                 produit = '/'
@@ -2491,8 +2518,8 @@ class PigeFinalePubliciteView(generics.ListAPIView):
                     "marche": marche,
                     "famille": famille,
                     "secteur": secteur,
-                    "avant": programmeAvant[0].message if len(programmeAvant) > 0 else '/',
-                    'apres': programmeApres[len(programmeApres)-1].message if len(programmeApres) > 0 else '/',
+                    "avant": programmeAvant if programmeAvant != '' else '/',
+                    'apres':  programmeApres if programmeApres != '' else '/',
                     "ecran": pub.ecran,
                     "afficheur": "/",
                     "panneau": "/",
@@ -2930,17 +2957,44 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
             if(len(tarif) < 1):
                 tarif = ""
 
-            programmeAvant = Programme.objects.filter(
-                jour=pub.jour, fin__lte=pub.debut)
-            programmeApres = Programme.objects.filter(
-                jour=pub.jour, debut__gte=pub.fin)
+            publicite = Publicite.objects.filter(
+                jour=pub.jour, confirmed=True)
+            programme = Programme.objects.filter(jour=pub.jour)
+            progs = []
+            i = 0
+            for prog1 in programme:
+                progs.append({
+                    "idd": prog1.id,
+                    "message": prog1.message,
+                    "debut": prog1.debut,
+                    "fin": prog1.fin,
+                })
+                i += 1
+            for pub1 in publicite:
+                progs.append({
+                    "idd": pub1.id,
+                    "message": pub1.message,
+                    "debut": pub1.debut,
+                    "fin": pub1.fin,
+                })
+                i += 1
+            progs = sorted(progs, key=lambda d: d['debut'])
 
-            if(len(programmeAvant) < 1):
-                programmeAvant = Publicite.objects.filter(
-                    jour=pub.jour, fin__lte=pub.debut)
-            if(len(programmeApres) < 1):
-                programmeApres = Publicite.objects.filter(
-                    jour=pub.jour, debut__gte=pub.fin)
+            pubindex = progs.index({
+                "idd": pub.id,
+                "message": pub.message,
+                "debut": pub.debut,
+                "fin": pub.fin,
+            })
+
+            programmeAvant = ""
+            programmeApres = ""
+
+            if 0 <= pubindex-1:
+                programmeAvant = progs[pubindex-1]["message"]
+            if len(progs) > pubindex+1:
+                programmeApres = progs[pubindex+1]["message"]
+
 
             marque = '/'
             produit = '/'
@@ -2983,9 +3037,9 @@ class PigeFinaleAdminArticleView(generics.ListAPIView):
                 "segment": segment,
                 "marche": marche,
                 "famille": famille,
-                "secteur": secteur,
-                "avant": programmeAvant[0].message if len(programmeAvant) > 0 else '/',
-                'apres': programmeApres[len(programmeApres)-1].message if len(programmeApres) > 0 else '/',
+                "secteur": secteur,    
+                "avant": programmeAvant if programmeAvant != '' else '/',
+                'apres':  programmeApres if programmeApres != '' else '/',
                 "ecran": pub.ecran,
                 "afficheur": "/",
                 "panneau": "/",
